@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# change to root directory
+cd $(dirname "$0")
+
+autoreconf --force --install --verbose
