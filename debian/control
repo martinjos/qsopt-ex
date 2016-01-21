@@ -8,7 +8,7 @@ Build-Depends:
 	libgmp-dev
 Standards-Version: 3.9.6
 Section: libs
-Homepage: https://github.com/jonls/qsopt-ex
+Homepage: http://www.dii.uchile.cl/~daespino/ESolver_doc/main.html
 #Vcs-Git: git://git.debian.org/collab-maint/qsopt-ex.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/qsopt-ex.git;a=summary
 
