@@ -1,6 +1,9 @@
 Source: qsopt-ex
 Priority: optional
-Maintainer: Jon Lund Steffensen <jonlst@gmail.com>
+Maintainer: Debian Med Packaging Team <debian-med-packaging@lists.alioth.debian.org>
+Uploaders:
+	Jon Lund Steffensen <jonlst@gmail.com>,
+	Afif Elghraoui <afif@ghraoui.name>,
 Build-Depends:
 	debhelper (>= 9),
 	dh-autoreconf,
@@ -9,8 +12,8 @@ Build-Depends:
 Standards-Version: 3.9.6
 Section: libs
 Homepage: http://www.dii.uchile.cl/~daespino/ESolver_doc/main.html
-#Vcs-Git: git://git.debian.org/collab-maint/qsopt-ex.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/qsopt-ex.git;a=summary
+Vcs-Git: git://git.debian.org/debian-med/qsopt-ex.git
+Vcs-Browser: http://git.debian.org/cgit/debian-med/qsopt-ex.git
 
 Package: qsopt-ex-dev
 Section: libdevel
