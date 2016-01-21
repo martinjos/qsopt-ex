@@ -1,6 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: qsopt-ex
 Source: https://github.com/jonls/qsopt-ex
+Files-Excluded: contrib
 
 Files: *
 Copyright:
