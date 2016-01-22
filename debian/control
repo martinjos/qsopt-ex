@@ -1,4 +1,5 @@
 Source: qsopt-ex
+Section: math
 Priority: optional
 Maintainer: Debian Med Packaging Team <debian-med-packaging@lists.alioth.debian.org>
 Uploaders:
@@ -8,59 +9,51 @@ Build-Depends:
 	debhelper (>= 9),
 	dh-autoreconf,
 	autotools-dev,
-	libgmp-dev
+	libgmp-dev,
 Standards-Version: 3.9.6
-Section: libs
 Homepage: http://www.dii.uchile.cl/~daespino/ESolver_doc/main.html
 Vcs-Git: git://git.debian.org/debian-med/qsopt-ex.git
 Vcs-Browser: http://git.debian.org/cgit/debian-med/qsopt-ex.git
 
-Package: qsopt-ex-dev
+Package: qsopt-ex
+Architecture: any
+Depends:
+	${shlibs:Depends},
+	${misc:Depends},
+	qsopt-ex2 (= ${binary:Version}),
+Description: Exact linear programming solver
+ QSopt-ex is an implementation of a simplex-based algorithm that returns exact
+ rational solutions, taking advantage of the speed of floating-point
+ calculations and attempting to minimize the operations performed in
+ rational arithmetic.
+ . 
+ This package contains the command-line utilities.
+
+Package: libqsopt-ex-dev
 Section: libdevel
 Architecture: any
 Depends:
 	${shlibs:Depends},
 	${misc:Depends},
-	qsopt-ex2 (= ${binary:Version})
-Description: Exact linear programming solver
- This is a fork of QSopt_ex, originally released by Daniel
- Espinoza et al. version 2.5.10 under the GPL 3 (or later).
- The goal of this fork is to update the software, and in particular the
- build system, to be more friendly. In addition the external
- dependencies have been reduced by removing the dependency on EGlib,
- GNU awk and Exuberant Ctags.
+	qsopt-ex2 (= ${binary:Version}),
+Description: Exact linear programming solver -- development files
+ QSopt-ex is an implementation of a simplex-based algorithm that returns exact
+ rational solutions, taking advantage of the speed of floating-point
+ calculations and attempting to minimize the operations performed in
+ rational arithmetic.
  . 
  This package contains the development files.
 
-Package: qsopt-ex-esolver
-Section: math
-Architecture: any
-Depends:
-	${shlibs:Depends},
-	${misc:Depends},
-	qsopt-ex2 (= ${binary:Version})
-Description: Exact linear programming solver
- This is a fork of QSopt_ex, originally released by Daniel
- Espinoza et al. version 2.5.10 under the GPL 3 (or later).
- The goal of this fork is to update the software, and in particular the
- build system, to be more friendly. In addition the external
- dependencies have been reduced by removing the dependency on EGlib,
- GNU awk and Exuberant Ctags.
- . 
- This package contains the esolver program.
-
-Package: qsopt-ex2
+Package: libqsopt-ex2
 Section: libs
 Architecture: any
 Depends:
 	${shlibs:Depends},
-	${misc:Depends}
-Description: Exact linear programming solver
- This is a fork of QSopt_ex, originally released by Daniel
- Espinoza et al. version 2.5.10 under the GPL 3 (or later).
- The goal of this fork is to update the software, and in particular the
- build system, to be more friendly. In addition the external
- dependencies have been reduced by removing the dependency on EGlib,
- GNU awk and Exuberant Ctags.
+	${misc:Depends},
+Description: Exact linear programming solver -- shared library
+ QSopt-ex is an implementation of a simplex-based algorithm that returns exact
+ rational solutions, taking advantage of the speed of floating-point
+ calculations and attempting to minimize the operations performed in
+ rational arithmetic.
  .
  This package contains the main library.
