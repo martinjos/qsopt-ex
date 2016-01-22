@@ -20,7 +20,7 @@ Architecture: any
 Depends:
 	${shlibs:Depends},
 	${misc:Depends},
-	qsopt-ex2 (= ${binary:Version}),
+	libqsopt-ex2 (= ${binary:Version}),
 Description: Exact linear programming solver
  QSopt-ex is an implementation of a simplex-based algorithm that returns exact
  rational solutions, taking advantage of the speed of floating-point
@@ -35,14 +35,14 @@ Architecture: any
 Depends:
 	${shlibs:Depends},
 	${misc:Depends},
-	qsopt-ex2 (= ${binary:Version}),
+	libqsopt-ex2 (= ${binary:Version}),
 Description: Exact linear programming solver -- development files
  QSopt-ex is an implementation of a simplex-based algorithm that returns exact
  rational solutions, taking advantage of the speed of floating-point
  calculations and attempting to minimize the operations performed in
  rational arithmetic.
  . 
- This package contains the development files.
+ This package contains the header files and static library.
 
 Package: libqsopt-ex2
 Section: libs
