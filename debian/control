@@ -12,8 +12,8 @@ Build-Depends:
 	libgmp-dev,
 Standards-Version: 3.9.6
 Homepage: http://www.dii.uchile.cl/~daespino/ESolver_doc/main.html
-Vcs-Git: git://git.debian.org/debian-med/qsopt-ex.git
-Vcs-Browser: http://git.debian.org/cgit/debian-med/qsopt-ex.git
+Vcs-Git: git://anonscm.debian.org/debian-med/qsopt-ex.git
+Vcs-Browser: http://anonscm.debian.org/cgit/debian-med/qsopt-ex.git
 
 Package: qsopt-ex
 Architecture: any
