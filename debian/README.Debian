@@ -1,0 +1,9 @@
+qsopt-ex for Debian
+-------------------
+
+This QSopt-EX package is based on Jon Lund Steffenson's fork, but
+this does not include many of the executables provided in the
+original version of the software; esolver is the only executable
+currently provided by this package.
+
+ -- Afif Elghraoui <afif@ghraoui.name>, Sun, 24 Jan 2016 13:49:22 -0800
