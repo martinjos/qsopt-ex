@@ -1,4 +1,4 @@
-qsopt-ex (2.5.10.3+ds-1) UNRELEASED; urgency=low
+qsopt-ex (2.5.10.3-1) UNRELEASED; urgency=low
 
   [ Jon Lund Steffensen ]
   * Initial packaging for Ubuntu
