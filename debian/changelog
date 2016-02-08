@@ -1,10 +1,9 @@
-qsopt-ex (2.5.10.3-1) UNRELEASED; urgency=low
+qsopt-ex (2.5.10.3-1) unstable; urgency=medium
 
   [ Jon Lund Steffensen ]
   * Initial packaging for Ubuntu
 
   [ Afif Elghraoui ]
-  * Update packaging
   * Initial Debian release (Closes: #812175)
 
- -- Jon Lund Steffensen <jonlst@gmail.com>  Sun, 15 Mar 2015 22:49:09 +0000
+ -- Afif Elghraoui <afif@ghraoui.name>  Sun, 07 Feb 2016 17:05:08 -0800
