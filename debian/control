@@ -3,7 +3,6 @@ Section: math
 Priority: optional
 Maintainer: Debian Med Packaging Team <debian-med-packaging@lists.alioth.debian.org>
 Uploaders:
-	Jon Lund Steffensen <jonlst@gmail.com>,
 	Afif Elghraoui <afif@ghraoui.name>,
 Build-Depends:
 	debhelper (>= 9),
