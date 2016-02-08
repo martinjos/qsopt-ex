@@ -1,5 +1,8 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: qsopt-ex
+Upstream-Contact:
+	Daniel Espinoza <daespino@gmail.com>
+	Jon Lund Steffenson <jonlst@gmail.com>
 Source: https://github.com/jonls/qsopt-ex
 
 Files: *
@@ -7,14 +10,74 @@ Copyright:
 	2006-2008 David Applegate
 	2006-2008 William Cook
 	2006-2008 Sanjeeb Dash
+	2006-2008 Daniel Espinoza <daespino@gmail.com>
+	2014-2015 Jon Lund Steffenson <jonlst@gmail.com>
+License: GPL-2+ or Research-Use-Only or GPL-3+
+Comment:
+ The project as modified by Jon Lund Steffenson is licensed under GPL-3+ /only/.
+
+Files: contrib/*
+Copyright:
 	2014-2015 Jon Lund Steffensen <jonlst@gmail.com>
 License: GPL-3+
+
+Files:
+	qsopt_ex/QSopt_ex_version.h
+	qsopt_ex/eg_io.c
+	qsopt_ex/eg_elist.h
+	qsopt_ex/eg_exutil.h
+	qsopt_ex/qs_config.h
+	qsopt_ex/eg_exutil.c
+	qsopt_ex/eg_lpnum.c
+	qsopt_ex/QSopt_ex_version.c
+	qsopt_ex/QSopt_ex.h
+	qsopt_ex/exact.h
+	qsopt_ex/eg_lpnum.dbl.h
+	qsopt_ex/eg_lpnum.mpf.h
+	qsopt_ex/eg_io.h
+	qsopt_ex/eg_numutil.h
+	qsopt_ex/eg_lpnum.h
+	qsopt_ex/eg_numutil.c
+	qsopt_ex/eg_memslab.h
+	qsopt_ex/eg_mem.h
+	qsopt_ex/eg_nummacros.h
+	qsopt_ex/eg_macros.c
+	qsopt_ex/eg_timer.h
+	qsopt_ex/eg_lpnum.mpq.h
+	qsopt_ex/eg_exact.h
+	qsopt_ex/eg_memslab.c
+	qsopt_ex/exact.c
+	qsopt_ex/eg_macros.h
+	tests/eg_lpnum_ex.c
+Copyright:
+	2006-2008 David Applegate
+	2006-2008 William Cook
+	2006-2008 Sanjeeb Dash
+	2006-2008 Daniel Espinoza <daespino@gmail.com>
+License: LGPL-2.1+ or Research-Use-Only
 
 Files: debian/*
 Copyright:
 	2015 Jon Lund Steffensen <jonlst@gmail.com>
 	2015 Afif Elghraoui <afif@ghraoui.name>
 License: GPL-3+
+
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
 
 License: GPL-3+
  This program is free software: you can redistribute it and/or modify
@@ -32,3 +95,23 @@ License: GPL-3+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+License: LGPL-2.1+
+ This package is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License can be found in "/usr/share/common-licenses/LGPL-2.1".
+
+License: Research-Use-Only
+ Alternatively, use is granted for research purposes only.
