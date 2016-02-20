@@ -25,7 +25,7 @@ Description: Exact linear programming solver
  rational solutions, taking advantage of the speed of floating-point
  calculations and attempting to minimize the operations performed in
  rational arithmetic.
- . 
+ .
  This package contains the command-line utilities.
 
 Package: libqsopt-ex-dev
@@ -40,7 +40,7 @@ Description: Exact linear programming solver -- development files
  rational solutions, taking advantage of the speed of floating-point
  calculations and attempting to minimize the operations performed in
  rational arithmetic.
- . 
+ .
  This package contains the header files and static library.
 
 Package: libqsopt-ex2
