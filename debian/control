@@ -1,23 +1,20 @@
 Source: qsopt-ex
+Maintainer: Debian Med Packaging Team <debian-med-packaging@lists.alioth.debian.org>
+Uploaders: Afif Elghraoui <afif@ghraoui.name>
 Section: math
 Priority: optional
-Maintainer: Debian Med Packaging Team <debian-med-packaging@lists.alioth.debian.org>
-Uploaders:
-	Afif Elghraoui <afif@ghraoui.name>,
-Build-Depends:
-	debhelper (>= 11~),
-	libgmp-dev,
-Standards-Version: 3.9.6
+Build-Depends: debhelper (>= 11~),
+               libgmp-dev
+Standards-Version: 4.2.1
+Vcs-Browser: https://salsa.debian.org/med-team/qsopt-ex
+Vcs-Git: https://salsa.debian.org/med-team/qsopt-ex.git
 Homepage: http://www.dii.uchile.cl/~daespino/ESolver_doc/main.html
-Vcs-Git: git://anonscm.debian.org/debian-med/qsopt-ex.git
-Vcs-Browser: http://anonscm.debian.org/cgit/debian-med/qsopt-ex.git
 
 Package: qsopt-ex
 Architecture: any
-Depends:
-	${shlibs:Depends},
-	${misc:Depends},
-	libqsopt-ex2 (= ${binary:Version}),
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libqsopt-ex2 (= ${binary:Version})
 Description: Exact linear programming solver
  QSopt-ex is an implementation of a simplex-based algorithm that returns exact
  rational solutions, taking advantage of the speed of floating-point
@@ -27,12 +24,11 @@ Description: Exact linear programming solver
  This package contains the command-line utilities.
 
 Package: libqsopt-ex-dev
-Section: libdevel
 Architecture: any
-Depends:
-	${shlibs:Depends},
-	${misc:Depends},
-	libqsopt-ex2 (= ${binary:Version}),
+Section: libdevel
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libqsopt-ex2 (= ${binary:Version})
 Description: Exact linear programming solver -- development files
  QSopt-ex is an implementation of a simplex-based algorithm that returns exact
  rational solutions, taking advantage of the speed of floating-point
@@ -42,11 +38,10 @@ Description: Exact linear programming solver -- development files
  This package contains the header files and static library.
 
 Package: libqsopt-ex2
-Section: libs
 Architecture: any
-Depends:
-	${shlibs:Depends},
-	${misc:Depends},
+Section: libs
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
 Description: Exact linear programming solver -- shared library
  QSopt-ex is an implementation of a simplex-based algorithm that returns exact
  rational solutions, taking advantage of the speed of floating-point
