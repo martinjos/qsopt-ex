@@ -5,9 +5,7 @@ Maintainer: Debian Med Packaging Team <debian-med-packaging@lists.alioth.debian.
 Uploaders:
 	Afif Elghraoui <afif@ghraoui.name>,
 Build-Depends:
-	debhelper (>= 9),
-	dh-autoreconf,
-	autotools-dev,
+	debhelper (>= 11~),
 	libgmp-dev,
 Standards-Version: 3.9.6
 Homepage: http://www.dii.uchile.cl/~daespino/ESolver_doc/main.html
