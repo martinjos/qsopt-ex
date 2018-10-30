@@ -6,3 +6,12 @@ export DEB_BUILD_MAINT_OPTIONS=hardening=+all
 
 %:
 	dh $@
+
+override_dh_install:
+	dh_install
+	d-shlibmove --commit \
+		    --multiarch \
+		    --devunversioned \
+		    --exclude-la \
+		    --movedev debian/tmp/usr/include/* usr/include \
+		    debian/tmp/usr/lib/*/*.so

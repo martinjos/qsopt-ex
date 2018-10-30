@@ -4,6 +4,7 @@ Uploaders: Afif Elghraoui <afif@ghraoui.name>
 Section: math
 Priority: optional
 Build-Depends: debhelper (>= 11~),
+               d-shlibs,
                libgmp-dev
 Standards-Version: 4.2.1
 Vcs-Browser: https://salsa.debian.org/med-team/qsopt-ex
