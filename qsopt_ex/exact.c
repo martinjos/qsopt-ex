@@ -1522,7 +1522,6 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 			infeasible_output (p_mpq, y, y_mpq);
 			goto CLEANUP;
 		}
-		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 		basis = dbl_QSget_basis (p_dbl);
 		/* case continued after end of switch statement */
 		break;
@@ -1541,13 +1540,10 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 	}
 	if (*status == QS_LP_OPTIMAL || *status == QS_LP_INFEASIBLE)
 	{
+		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 		EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
 		if (*status == QS_LP_OPTIMAL)
 		{
-			if(!msg_lvl)
-			{
-				MESSAGE(0,"Retesting solution");
-			}
 			EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 			EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 			if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
@@ -1579,7 +1575,7 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 		{
 			if(!msg_lvl)
 			{
-				MESSAGE(0,"Status is not optimal, but %d", *status);
+				MESSAGE(0,"Status is not optimal or infeasible, but %d", *status);
 			}
 		}
 		mpq_EGlpNumFreeArray (x_mpq);
@@ -1687,7 +1683,6 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 				infeasible_output (p_mpq, y, y_mpq);
 				goto CLEANUP;
 			}
-			MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 			basis = mpf_QSget_basis (p_mpf);
 			/* case continued after end of switch statement */
 			break;
@@ -1703,10 +1698,10 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 		}
 		if (*status == QS_LP_OPTIMAL || *status == QS_LP_INFEASIBLE)
 		{
+			MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 			EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
 			if (*status == QS_LP_OPTIMAL)
 			{
-				MESSAGE (msg_lvl, "Retesting solution");
 				EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 				EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 				if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
@@ -1736,7 +1731,7 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 			}
 			else
 			{
-				MESSAGE (msg_lvl, "Status is not optimal, but %d", *status);
+				MESSAGE (msg_lvl, "Status is not optimal or infeasible, but %d", *status);
 			}
 			mpq_EGlpNumFreeArray (x_mpq);
 			mpq_EGlpNumFreeArray (y_mpq);
