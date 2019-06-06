@@ -1675,29 +1675,7 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 				optimal_output (p_mpq, x, y, x_mpq, y_mpq);
 				goto CLEANUP;
 			}
-			else
-			{
-				EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
-				if (*status == QS_LP_OPTIMAL)
-				{
-					MESSAGE (msg_lvl, "Retesting solution");
-					EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
-					EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
-					if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
-					{
-						optimal_output (p_mpq, x, y, x_mpq, y_mpq);
-						goto CLEANUP;
-					}
-					else
-					{
-						last_status = *status = QS_LP_UNSOLVED;
-					}
-				}
-				else
-					MESSAGE (msg_lvl, "Status is not optimal, but %d", *status);
-			}
-			mpq_EGlpNumFreeArray (x_mpq);
-			mpq_EGlpNumFreeArray (y_mpq);
+			/* case continued after end of switch statement */
 			break;
 		case QS_LP_INFEASIBLE:
 			y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
@@ -1709,36 +1687,9 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 				infeasible_output (p_mpq, y, y_mpq);
 				goto CLEANUP;
 			}
-			else
-			{
-				MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
-				basis = mpf_QSget_basis (p_mpf);
-				EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
-#if 0
-				mpq_QSset_param (p_mpq, QS_PARAM_SIMPLEX_MAX_ITERATIONS, 1);
-				mpq_QSload_basis (p_mpq, basis);
-				mpq_QSfree_basis (basis);
-				EGcallD(mpq_ILLeditor_solve (p_mpq, simplexalgo));
-				EGcallD(mpq_QSget_status (p_mpq, status));
-#endif
-				if (*status == QS_LP_INFEASIBLE)
-				{
-					mpq_EGlpNumFreeArray (y_mpq);
-					y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
-					EGcallD(mpq_QSget_infeas_array (p_mpq, y_mpq));
-					if (QSexact_infeasible_test (p_mpq, y_mpq))
-					{
-						infeasible_output (p_mpq, y, y_mpq);
-						goto CLEANUP;
-					}
-					else
-					{
-						last_status = *status = QS_LP_UNSOLVED;
-					}
-				}
-			}
-			mpq_EGlpNumFreeArray (y_mpq);
-			break;
+			MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
+			basis = mpf_QSget_basis (p_mpf);
+			/* case continued after end of switch statement */
 			break;
 		case QS_LP_OBJ_LIMIT:
 			rval=1;
@@ -1749,6 +1700,46 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 		default:
 			MESSAGE(__QS_SB_VERB,"Re-trying inextended precision");
 			break;
+		}
+		if (*status == QS_LP_OPTIMAL || *status == QS_LP_INFEASIBLE)
+		{
+			EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+			if (*status == QS_LP_OPTIMAL)
+			{
+				MESSAGE (msg_lvl, "Retesting solution");
+				EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
+				EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
+				if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
+				{
+					optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+					goto CLEANUP;
+				}
+				else
+				{
+					last_status = *status = QS_LP_UNSOLVED;
+				}
+			}
+			else if (*status == QS_LP_INFEASIBLE)
+			{
+				mpq_EGlpNumFreeArray (y_mpq);
+				y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
+				EGcallD(mpq_QSget_infeas_array (p_mpq, y_mpq));
+				if (QSexact_infeasible_test (p_mpq, y_mpq))
+				{
+					infeasible_output (p_mpq, y, y_mpq);
+					goto CLEANUP;
+				}
+				else
+				{
+					last_status = *status = QS_LP_UNSOLVED;
+				}
+			}
+			else
+			{
+				MESSAGE (msg_lvl, "Status is not optimal, but %d", *status);
+			}
+			mpq_EGlpNumFreeArray (x_mpq);
+			mpq_EGlpNumFreeArray (y_mpq);
 		}
 	NEXT_PRECISION:
 		mpf_QSfree_prob (p_mpf);
