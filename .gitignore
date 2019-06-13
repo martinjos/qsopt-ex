@@ -1,3 +1,9 @@
+# Expanded templates
+
+*_dbl.[ch]
+*_mpf.[ch]
+*_mpq.[ch]
+
 # Object files
 *.o
 *.ko
@@ -28,6 +34,11 @@
 *.x86_64
 *.hex
 
+# Binaries (no extension)
+/esolver/esolver
+/tests/eg_sloan
+/tests/test_qs
+
 # http://www.gnu.org/software/automake
 
 .deps
@@ -54,3 +65,7 @@ Makefile.in
 /config.log
 /config.status
 /config.sub
+
+# http://www.gnu.org/software/libtool
+
+/libtool
