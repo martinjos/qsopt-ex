@@ -1820,9 +1820,8 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	last_status = *status;
 	EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
 	/* deal with the problem depending on what status we got from our optimizer */
-	switch (*status)
+	if (*status == QS_LP_OPTIMAL)
 	{
-	case QS_LP_OPTIMAL:
 		x_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->ncols);
 		y_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->nrows);
 		EGcallD(dbl_QSget_x_array (p_dbl, x_dbl));
@@ -1837,41 +1836,6 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 			optimal_output (p_mpq, x, y, x_mpq, y_mpq);
 			goto CLEANUP;
 		}
-		/* case continued after end of switch statement */
-		break;
-	case QS_LP_INFEASIBLE:
-		y_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->nrows);
-		if (dbl_QSget_infeas_array (p_dbl, y_dbl))
-		{
-			MESSAGE(p_mpq->simplex_display ? 0 : __QS_SB_VERB, "double approximation"
-							" failed, code %d, continuing in extended precision\n", rval);
-			goto MPF_PRECISION;
-		}
-		y_mpq = QScopy_array_dbl_mpq (y_dbl);
-		dbl_EGlpNumFreeArray (y_dbl);
-		if (QSexact_infeasible_test (p_mpq, y_mpq))
-		{
-			infeasible_output (p_mpq, y, y_mpq);
-			goto CLEANUP;
-		}
-		basis = dbl_QSget_basis (p_dbl);
-		/* case continued after end of switch statement */
-		break;
-	case QS_LP_UNBOUNDED:
-		MESSAGE(p_mpq->simplex_display ? 0 : __QS_SB_VERB, "%s\n\tUnbounded "
-						"Problem found, not implemented to deal with this\n%s\n",__sp,__sp);
-		break;
-	case QS_LP_OBJ_LIMIT:
-		rval=1;
-		IFMESSAGE(p_mpq->simplex_display,"Objective limit reached (in floating point) ending now");
-		goto CLEANUP;
-		break;
-	default:
-		IFMESSAGE(p_mpq->simplex_display,"Re-trying inextended precision");
-		break;
-	}
-	if (*status == QS_LP_OPTIMAL || *status == QS_LP_INFEASIBLE)
-	{
 		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 		EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
 		if (*status == QS_LP_OPTIMAL)
@@ -1888,30 +1852,19 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 				last_status = *status = QS_LP_UNSOLVED;
 			}
 		}
-		else if (*status == QS_LP_INFEASIBLE)
-		{
-			mpq_EGlpNumFreeArray (y_mpq);
-			y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
-			EGcallD(mpq_QSget_infeas_array (p_mpq, y_mpq));
-			if (QSexact_infeasible_test (p_mpq, y_mpq))
-			{
-				infeasible_output (p_mpq, y, y_mpq);
-				goto CLEANUP;
-			}
-			else
-			{
-				last_status = *status = QS_LP_UNSOLVED;
-			}
-		}
 		else
 		{
 			if(!msg_lvl)
 			{
-				MESSAGE(0,"Status is not optimal or infeasible, but %d", *status);
+				MESSAGE(0,"Status is not optimal, but %d", *status);
 			}
 		}
 		mpq_EGlpNumFreeArray (x_mpq);
 		mpq_EGlpNumFreeArray (y_mpq);
+	}
+	else
+	{
+		IFMESSAGE(p_mpq->simplex_display,"Re-trying inextended precision");
 	}
 	/* if we reach this point, then we have to keep going, we use the previous
 	 * basis ONLY if the previous precision think that it has the optimal
@@ -1986,9 +1939,8 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		last_status = *status;
 		EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
 		/* deal with the problem depending on status we got from our optimizer */
-		switch (*status)
+		if (*status == QS_LP_OPTIMAL)
 		{
-		case QS_LP_OPTIMAL:
 			basis = mpf_QSget_basis (p_mpf);
 			x_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->ncols);
 			y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
@@ -2003,33 +1955,6 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 				optimal_output (p_mpq, x, y, x_mpq, y_mpq);
 				goto CLEANUP;
 			}
-			/* case continued after end of switch statement */
-			break;
-		case QS_LP_INFEASIBLE:
-			y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
-			EGcallD(mpf_QSget_infeas_array (p_mpf, y_mpf));
-			y_mpq = QScopy_array_mpf_mpq (y_mpf);
-			mpf_EGlpNumFreeArray (y_mpf);
-			if (QSexact_infeasible_test (p_mpq, y_mpq))
-			{
-				infeasible_output (p_mpq, y, y_mpq);
-				goto CLEANUP;
-			}
-			basis = mpf_QSget_basis (p_mpf);
-			/* case continued after end of switch statement */
-			break;
-		case QS_LP_OBJ_LIMIT:
-			rval=1;
-			IFMESSAGE(p_mpq->simplex_display,"Objective limit reached (in floating point) ending now");
-			goto CLEANUP;
-			break;
-		case QS_LP_UNBOUNDED:
-		default:
-			MESSAGE(__QS_SB_VERB,"Re-trying inextended precision");
-			break;
-		}
-		if (*status == QS_LP_OPTIMAL || *status == QS_LP_INFEASIBLE)
-		{
 			MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 			EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
 			if (*status == QS_LP_OPTIMAL)
@@ -2046,27 +1971,16 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 					last_status = *status = QS_LP_UNSOLVED;
 				}
 			}
-			else if (*status == QS_LP_INFEASIBLE)
-			{
-				mpq_EGlpNumFreeArray (y_mpq);
-				y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
-				EGcallD(mpq_QSget_infeas_array (p_mpq, y_mpq));
-				if (QSexact_infeasible_test (p_mpq, y_mpq))
-				{
-					infeasible_output (p_mpq, y, y_mpq);
-					goto CLEANUP;
-				}
-				else
-				{
-					last_status = *status = QS_LP_UNSOLVED;
-				}
-			}
 			else
 			{
-				MESSAGE (msg_lvl, "Status is not optimal or infeasible, but %d", *status);
+				MESSAGE (msg_lvl, "Status is not optimal, but %d", *status);
 			}
 			mpq_EGlpNumFreeArray (x_mpq);
 			mpq_EGlpNumFreeArray (y_mpq);
+		}
+		else
+		{
+			MESSAGE(__QS_SB_VERB,"Re-trying inextended precision");
 		}
 	NEXT_PRECISION:
 		mpf_QSfree_prob (p_mpf);
