@@ -1767,12 +1767,12 @@ CLEANUP:
 /* ========================================================================= */
 /* Important: the input problem must be feasible and bounded.  */
 int QSexact_delta_solver (mpq_QSdata * p_mpq,
-										mpq_t * const x,
-										mpq_t * const y,
-										QSbasis * const ebasis,
-										int simplexalgo,
-										int *status,
-										const mpq_t *delta)
+													mpq_t * const x,
+													mpq_t * const y,
+													QSbasis * const ebasis,
+													int simplexalgo,
+													int *status,
+													mpq_t const * const delta)
 {
 	/* local variables */
 	int last_status = 0, last_iter = 0;

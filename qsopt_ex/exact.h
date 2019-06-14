@@ -339,6 +339,32 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 										int *status);
 
 /* ========================================================================= */
+/** @brief Given an mpq_QSdata problem, solve the delta-satisfiability problem
+ * exactly.  The problem must be a feasible and bounded feasibility LP with
+ * artificial variables for all constraints.
+ * @param x if not null, we store here the primal solution to the 
+ * problem (if it exist).
+ * @param y if not null, we store here the dual solution to the
+ * problem, 
+ * @param p_mpq problem to solve for delta-satisfiability exactly.
+ * @param status pointer to the integer where we will return the status
+ * of the problem, either optimal, infeasible, or unbounded (we could also 
+ * return time out).
+ * @param simplexalgo whether to use primal or dual simplex while solving
+ * to optimality the problem.
+ * @param basis if not null, use the given basis to start the
+ * iteration of simplex, and store here the optimal basis (if found).
+ * @delta 
+ * @return zero on success, non-zero otherwise. */
+int QSexact_delta_solver (mpq_QSdata * p_mpq,
+													mpq_t * const x,
+													mpq_t * const y,
+													QSbasis * const basis,
+													int simplexalgo,
+													int *status,
+													mpq_t const * const delta);
+
+/* ========================================================================= */
 /** @brief Initializator for global data, this is needed mainly for defining
  * constants in extended floating point precision and for rational precision.
  * This call should be done BEFORE any mpq_xxx mpf_xxx QSxx EGxx call */
