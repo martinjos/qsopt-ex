@@ -139,6 +139,13 @@ int QSexact_optimal_test (mpq_QSdata * p,
 													QSbasis * basis);
 
 /* ========================================================================= */
+int QSexact_delta_optimal_test (mpq_QSdata * p,
+																mpq_t * p_sol,
+																mpq_t * d_sol,
+																QSbasis * basis,
+																mpq_t const * const delta);
+
+/* ========================================================================= */
 /** @brief Print into a file the optimal solution.
  * @param p original problem.
  * @param out_f file where to write the solution.
