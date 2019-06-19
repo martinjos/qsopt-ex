@@ -956,7 +956,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 	}
 
-	/* now check if both rhs and copy_rhs are equal */
+	/* now replace the row slack */
 	arr4 = qslp->upper;
 	arr1 = qslp->rhs;
 	arr2 = qslp->lower;
@@ -964,28 +964,13 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	{
 		mpq_mul (num1, arr1[i], d_sol[i]);
 		mpq_add (d_obj, d_obj, num1);
-		mpq_sub (num2, arr1[i], rhs_copy[i]);
+		mpq_sub (num2, arr1[i], rhs_copy[i]);  /* num2 = b_i - A_i.x */
 		EXIT (qslp->A.matcnt[rowmap[i]] != 1, "Imposible!");
-		if (basis->rstat[i] == QS_ROW_BSTAT_BASIC)
-			mpq_div (p_sol[qslp->nstruct + i], num2,
-							 qslp->A.matval[qslp->A.matbeg[rowmap[i]]]);
-		else
-		{
-			mpq_mul (num1, p_sol[qslp->nstruct + i],
-							 qslp->A.matval[qslp->A.matbeg[rowmap[i]]]);
-			if (!mpq_equal (num1, num2))
-			{
-				rval = 0;
-				if(!msg_lvl)
-				{
-					MESSAGE(0, "solution is infeasible for constraint %s, violation"
-								 " %lg", qslp->rownames[i],
-								 mpq_get_d (num1) - mpq_get_d (num2));
-				}
-				goto CLEANUP;
-			}
-		}
-		mpq_set (num2, p_sol[qslp->nstruct + i]);
+		/* divide by its own coefficient to get value of row slack */
+		mpq_div (num2, num2,
+						 qslp->A.matval[qslp->A.matbeg[rowmap[i]]]);
+		/* always replace row slacks, even if non-basic */
+		mpq_set (p_sol[qslp->nstruct + i], num2);
 		/* now we check the bounds on the logical variables */
 		if (mpq_cmp (num2, arr2[rowmap[i]]) < 0)
 		{
