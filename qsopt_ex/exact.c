@@ -832,7 +832,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	 *structmap = qslp->structmap,
 	  col;
 	mpq_t *arr1 = 0,
-	 *arr2 = 0,
 	 *rhs_copy = 0;
 	mpq_t *dz = 0;
 	int objsense = (qslp->objsense == QS_MIN) ? 1 : -1;
@@ -954,7 +953,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 
 	/* now replace the row slack */
 	arr1 = qslp->rhs;
-	arr2 = qslp->lower;
 	for (i = qslp->nrows; i--;)
 	{
 		mpq_mul (num1, arr1[i], d_sol[i]);
@@ -967,7 +965,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* always replace row slacks, even if non-basic */
 		mpq_set (p_sol[qslp->nstruct + i], num2);
 		/* now we check the bounds on the logical variables */
-		if (mpq_cmp (num2, arr2[rowmap[i]]) < 0)
+		if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
 		{
 			rval = 0;
 			if(!msg_lvl)
@@ -975,7 +973,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 				MESSAGE(0, "constraint %s artificial (%lg) bellow lower"
 								 " bound (%lg), actual LHS (%lg), actual RHS (%lg)",
 								 qslp->rownames[i], mpq_get_d (num2), 
-								 mpq_get_d (arr2[rowmap[i]]), mpq_get_d (rhs_copy[i]), 
+								 mpq_get_d (qslp->lower[rowmap[i]]), mpq_get_d (rhs_copy[i]),
 								 mpq_get_d (arr1[i]));
 			}
 			goto CLEANUP;
@@ -999,15 +997,14 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	 * max y*b + l*dl + u*du, we colapse both vector dl and du into dz, note that
 	 * if we are maximizing, then dl <= 0 and du >=0 */
 	dz = mpq_EGlpNumAllocArray (qslp->ncols);
-	arr2 = qslp->obj;
 	for (i = qslp->nstruct; i--;)
 	{
 		col = structmap[i];
-		mpq_mul (num1, arr2[col], p_sol[i]);
+		mpq_mul (num1, qslp->obj[col], p_sol[i]);
 		mpq_add (p_obj, p_obj, num1);
 		arr1 = qslp->A.matval + qslp->A.matbeg[col];
 		iarr1 = qslp->A.matind + qslp->A.matbeg[col];
-		mpq_set (num1, arr2[col]);
+		mpq_set (num1, qslp->obj[col]);
 		for (j = qslp->A.matcnt[col]; j--;)
 		{
 			mpq_mul (num2, arr1[j], d_sol[iarr1[j]]);
@@ -1071,14 +1068,14 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	for (i = qslp->nrows; i--;)
 	{
 		col = rowmap[i];
-		mpq_mul (num1, arr2[col], p_sol[i + qslp->nstruct]);
-		WARNING (mpq_cmp (arr2[col], mpq_zeroLpNum), "logical variable %s with "
-						 "non-zero objective function %lf", qslp->rownames[i],
-						 mpq_get_d (arr2[col]));
+		mpq_mul (num1, qslp->obj[col], p_sol[i + qslp->nstruct]);
+		WARNING (mpq_cmp (qslp->obj[col], mpq_zeroLpNum),
+						 "logical variable %s with non-zero objective function %lf",
+						 qslp->rownames[i], mpq_get_d (qslp->obj[col]));
 		mpq_add (p_obj, p_obj, num1);
 		arr1 = qslp->A.matval + qslp->A.matbeg[col];
 		iarr1 = qslp->A.matind + qslp->A.matbeg[col];
-		mpq_set (num1, arr2[col]);
+		mpq_set (num1, qslp->obj[col]);
 		for (j = qslp->A.matcnt[col]; j--;)
 		{
 			mpq_mul (num2, arr1[j], d_sol[iarr1[j]]);
