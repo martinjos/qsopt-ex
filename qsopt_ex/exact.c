@@ -827,12 +827,10 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	register int i,
 	  j;
 	mpq_ILLlpdata *qslp = p->lp->O;
-	int *iarr1 = 0,
-	 *rowmap = qslp->rowmap,
+	int *rowmap = qslp->rowmap,
 	 *structmap = qslp->structmap,
 	  col;
-	mpq_t *arr1 = 0,
-	 *rhs_copy = 0;
+	mpq_t *rhs_copy = 0;
 	mpq_t *dz = 0;
 	int objsense = (qslp->objsense == QS_MIN) ? 1 : -1;
 	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0 : 100000 * (1 - p->simplex_display);
@@ -941,23 +939,22 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	{
 		if (!mpq_equal (p_sol[i], mpq_zeroLpNum))
 		{
-			arr1 = qslp->A.matval + qslp->A.matbeg[structmap[i]];
-			iarr1 = qslp->A.matind + qslp->A.matbeg[structmap[i]];
+			mpq_t* arr = qslp->A.matval + qslp->A.matbeg[structmap[i]];
+			int* iarr = qslp->A.matind + qslp->A.matbeg[structmap[i]];
 			for (j = qslp->A.matcnt[structmap[i]]; j--;)
 			{
-				mpq_mul (num1, arr1[j], p_sol[i]);
-				mpq_add (rhs_copy[iarr1[j]], rhs_copy[iarr1[j]], num1);
+				mpq_mul (num1, arr[j], p_sol[i]);
+				mpq_add (rhs_copy[iarr[j]], rhs_copy[iarr[j]], num1);
 			}
 		}
 	}
 
 	/* now replace the row slack */
-	arr1 = qslp->rhs;
 	for (i = qslp->nrows; i--;)
 	{
-		mpq_mul (num1, arr1[i], d_sol[i]);
+		mpq_mul (num1, qslp->rhs[i], d_sol[i]);
 		mpq_add (d_obj, d_obj, num1);
-		mpq_sub (num2, arr1[i], rhs_copy[i]);  /* num2 = b_i - A_i.x */
+		mpq_sub (num2, qslp->rhs[i], rhs_copy[i]);  /* num2 = b_i - A_i.x */
 		EXIT (qslp->A.matcnt[rowmap[i]] != 1, "Imposible!");
 		/* divide by its own coefficient to get value of row slack */
 		mpq_div (num2, num2,
@@ -974,7 +971,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 								 " bound (%lg), actual LHS (%lg), actual RHS (%lg)",
 								 qslp->rownames[i], mpq_get_d (num2), 
 								 mpq_get_d (qslp->lower[rowmap[i]]), mpq_get_d (rhs_copy[i]),
-								 mpq_get_d (arr1[i]));
+								 mpq_get_d (qslp->rhs[i]));
 			}
 			goto CLEANUP;
 		}
@@ -1002,12 +999,12 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		col = structmap[i];
 		mpq_mul (num1, qslp->obj[col], p_sol[i]);
 		mpq_add (p_obj, p_obj, num1);
-		arr1 = qslp->A.matval + qslp->A.matbeg[col];
-		iarr1 = qslp->A.matind + qslp->A.matbeg[col];
+		mpq_t* arr = qslp->A.matval + qslp->A.matbeg[col];
+		int* iarr = qslp->A.matind + qslp->A.matbeg[col];
 		mpq_set (num1, qslp->obj[col]);
 		for (j = qslp->A.matcnt[col]; j--;)
 		{
-			mpq_mul (num2, arr1[j], d_sol[iarr1[j]]);
+			mpq_mul (num2, arr[j], d_sol[iarr[j]]);
 			mpq_sub (num1, num1, num2);
 		}
 		mpq_set (dz[col], num1);
@@ -1073,12 +1070,12 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 						 "logical variable %s with non-zero objective function %lf",
 						 qslp->rownames[i], mpq_get_d (qslp->obj[col]));
 		mpq_add (p_obj, p_obj, num1);
-		arr1 = qslp->A.matval + qslp->A.matbeg[col];
-		iarr1 = qslp->A.matind + qslp->A.matbeg[col];
+		mpq_t* arr = qslp->A.matval + qslp->A.matbeg[col];
+		int* iarr = qslp->A.matind + qslp->A.matbeg[col];
 		mpq_set (num1, qslp->obj[col]);
 		for (j = qslp->A.matcnt[col]; j--;)
 		{
-			mpq_mul (num2, arr1[j], d_sol[iarr1[j]]);
+			mpq_mul (num2, arr[j], d_sol[iarr[j]]);
 			mpq_sub (num1, num1, num2);
 		}
 		mpq_set (dz[col], num1);
