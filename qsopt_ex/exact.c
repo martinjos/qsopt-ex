@@ -833,8 +833,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	  col;
 	mpq_t *arr1 = 0,
 	 *arr2 = 0,
-	 *arr3 = 0,
-	 *arr4 = 0,
 	 *rhs_copy = 0;
 	mpq_t *dz = 0;
 	int objsense = (qslp->objsense == QS_MIN) ? 1 : -1;
@@ -855,8 +853,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	mpq_set_ui (d_obj, 0UL, 1UL);
 
 	/* now check if the given basis is the optimal basis */
-	arr3 = qslp->lower;
-	arr4 = qslp->upper;
 	if (mpq_QSload_basis (p, basis))
 	{
 		rval = 0;
@@ -866,14 +862,14 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	for (i = basis->nstruct; i--;)
 	{
 		/* check that the upper and lower bound define a non-empty space */
-		if (mpq_cmp (arr3[structmap[i]], arr4[structmap[i]]) > 0)
+		if (mpq_cmp (qslp->lower[structmap[i]], qslp->upper[structmap[i]]) > 0)
 		{
 			rval = 0;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "variable %s has empty feasible range [%lg,%lg]",
-								 qslp->colnames[i], mpq_EGlpNumToLf(arr3[structmap[i]]), 
-								 mpq_EGlpNumToLf(arr4[structmap[i]]));
+								 qslp->colnames[i], mpq_EGlpNumToLf(qslp->lower[structmap[i]]),
+								 mpq_EGlpNumToLf(qslp->upper[structmap[i]]));
 			}
 			goto CLEANUP;
 		}
@@ -882,16 +878,16 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		{
 		case QS_COL_BSTAT_FREE:
 		case QS_COL_BSTAT_BASIC:
-			if (mpq_cmp (p_sol[i], arr4[structmap[i]]) > 0)
-				mpq_set (p_sol[i], arr4[structmap[i]]);
-			else if (mpq_cmp (p_sol[i], arr3[structmap[i]]) < 0)
-				mpq_set (p_sol[i], arr3[structmap[i]]);
+			if (mpq_cmp (p_sol[i], qslp->upper[structmap[i]]) > 0)
+				mpq_set (p_sol[i], qslp->upper[structmap[i]]);
+			else if (mpq_cmp (p_sol[i], qslp->lower[structmap[i]]) < 0)
+				mpq_set (p_sol[i], qslp->lower[structmap[i]]);
 			break;
 		case QS_COL_BSTAT_UPPER:
-			mpq_set (p_sol[i], arr4[structmap[i]]);
+			mpq_set (p_sol[i], qslp->upper[structmap[i]]);
 			break;
 		case QS_COL_BSTAT_LOWER:
-			mpq_set (p_sol[i], arr3[structmap[i]]);
+			mpq_set (p_sol[i], qslp->lower[structmap[i]]);
 			break;
 		default:
 			rval = 0;
@@ -904,15 +900,15 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	for (i = basis->nrows; i--;)
 	{
 		/* check that the upper and lower bound define a non-empty space */
-		if (mpq_cmp (arr3[rowmap[i]], arr4[rowmap[i]]) > 0)
+		if (mpq_cmp (qslp->lower[rowmap[i]], qslp->upper[rowmap[i]]) > 0)
 		{
 			rval = 0;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "constraint %s logical has empty feasible range "
 								 "[%lg,%lg]", qslp->rownames[i], 
-								 mpq_EGlpNumToLf(arr3[rowmap[i]]), 
-								 mpq_EGlpNumToLf(arr4[rowmap[i]]));
+								 mpq_EGlpNumToLf(qslp->lower[rowmap[i]]),
+								 mpq_EGlpNumToLf(qslp->upper[rowmap[i]]));
 			}
 			goto CLEANUP;
 		}
@@ -920,16 +916,16 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		switch (basis->rstat[i])
 		{
 		case QS_ROW_BSTAT_BASIC:
-			if (mpq_cmp (p_sol[i + basis->nstruct], arr4[rowmap[i]]) > 0)
-				mpq_set (p_sol[i + basis->nstruct], arr4[rowmap[i]]);
-			else if (mpq_cmp (p_sol[i + basis->nstruct], arr3[rowmap[i]]) < 0)
-				mpq_set (p_sol[i + basis->nstruct], arr3[rowmap[i]]);
+			if (mpq_cmp (p_sol[i + basis->nstruct], qslp->upper[rowmap[i]]) > 0)
+				mpq_set (p_sol[i + basis->nstruct], qslp->upper[rowmap[i]]);
+			else if (mpq_cmp (p_sol[i + basis->nstruct], qslp->lower[rowmap[i]]) < 0)
+				mpq_set (p_sol[i + basis->nstruct], qslp->lower[rowmap[i]]);
 			break;
 		case QS_ROW_BSTAT_UPPER:
-			mpq_set (p_sol[i + basis->nstruct], arr4[rowmap[i]]);
+			mpq_set (p_sol[i + basis->nstruct], qslp->upper[rowmap[i]]);
 			break;
 		case QS_ROW_BSTAT_LOWER:
-			mpq_set (p_sol[i + basis->nstruct], arr3[rowmap[i]]);
+			mpq_set (p_sol[i + basis->nstruct], qslp->lower[rowmap[i]]);
 			break;
 		default:
 			rval = 0;
@@ -957,7 +953,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	}
 
 	/* now replace the row slack */
-	arr4 = qslp->upper;
 	arr1 = qslp->rhs;
 	arr2 = qslp->lower;
 	for (i = qslp->nrows; i--;)
@@ -985,14 +980,14 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			}
 			goto CLEANUP;
 		}
-		else if (mpq_cmp (num2, arr4[rowmap[i]]) > 0)
+		else if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 		{
 			rval = 0;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "constraint %s artificial (%lg) bellow lower bound"
 								 " (%lg)", qslp->rownames[i], mpq_get_d (num2),
-								 mpq_get_d (arr4[rowmap[i]]));
+								 mpq_get_d (qslp->upper[rowmap[i]]));
 			}
 			goto CLEANUP;
 		}
@@ -1005,8 +1000,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	 * if we are maximizing, then dl <= 0 and du >=0 */
 	dz = mpq_EGlpNumAllocArray (qslp->ncols);
 	arr2 = qslp->obj;
-	arr3 = qslp->lower;
-	arr4 = qslp->upper;
 	for (i = qslp->nstruct; i--;)
 	{
 		col = structmap[i];
@@ -1024,12 +1017,12 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* objective update */
 		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) > 0)
 		{
-			mpq_mul (num3, dz[col], arr3[col]);
+			mpq_mul (num3, dz[col], qslp->lower[col]);
 			mpq_add (d_obj, d_obj, num3);
 		}
 		else
 		{
-			mpq_mul (num3, dz[col], arr4[col]);
+			mpq_mul (num3, dz[col], qslp->upper[col]);
 			mpq_add (d_obj, d_obj, num3);
 		}
 		/* now we check that only when the logical is tight then the dual
@@ -1038,7 +1031,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		mpq_set_ui (num2, 0UL, 1UL);
 		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) > 0)
 		{
-			mpq_sub (num1, p_sol[i], arr3[col]);
+			mpq_sub (num1, p_sol[i], qslp->lower[col]);
 			mpq_mul (num2, num1, dz[col]);
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
@@ -1056,7 +1049,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		mpq_set_ui (num2, 0UL, 1UL);
 		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) < 0)
 		{
-			mpq_sub (num1, p_sol[i], arr4[col]);
+			mpq_sub (num1, p_sol[i], qslp->upper[col]);
 			mpq_mul (num2, num1, dz[col]);
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
@@ -1066,8 +1059,9 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			{
 				MESSAGE(0, "upper bound (%lg) variable (%lg) and dual variable"
 									" (%lg) don't satisfy complementary slacknes for variable"
-									" (%s,%d) %s", mpq_get_d(arr4[col]), mpq_get_d(p_sol[i]),
-									mpq_get_d(dz[col]), qslp->colnames[i], i, "(real)");
+									" (%s,%d) %s", mpq_get_d(qslp->upper[col]),
+									mpq_get_d(p_sol[i]), mpq_get_d(dz[col]), qslp->colnames[i],
+									i, "(real)");
 			}
 			goto CLEANUP;
 		}
@@ -1094,12 +1088,12 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* objective update */
 		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) > 0)
 		{
-			mpq_mul (num3, dz[col], arr3[col]);
+			mpq_mul (num3, dz[col], qslp->lower[col]);
 			mpq_add (d_obj, d_obj, num3);
 		}
 		else
 		{
-			mpq_mul (num3, dz[col], arr4[col]);
+			mpq_mul (num3, dz[col], qslp->upper[col]);
 			mpq_add (d_obj, d_obj, num3);
 		}
 		/* now we check that only when the primal variable is tight then the dual
@@ -1108,7 +1102,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		mpq_set_ui (num2, 0UL, 1UL);
 		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) > 0)
 		{
-			mpq_sub (num1, p_sol[i + qslp->nstruct], arr3[col]);
+			mpq_sub (num1, p_sol[i + qslp->nstruct], qslp->lower[col]);
 			mpq_mul (num2, num1, dz[col]);
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
@@ -1126,7 +1120,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		mpq_set_ui (num2, 0UL, 1UL);
 		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) < 0)
 		{
-			mpq_sub (num1, p_sol[i + qslp->nstruct], arr4[col]);
+			mpq_sub (num1, p_sol[i + qslp->nstruct], qslp->upper[col]);
 			mpq_mul (num2, num1, dz[col]);
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
@@ -1136,7 +1130,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			{
 				MESSAGE(0, "upper bound (%lg) variable (%lg) and dual variable"
 								" (%lg) don't satisfy complementary slacknes for variable "
-								"(%s,%d) %s", mpq_get_d(arr4[col]), 
+								"(%s,%d) %s", mpq_get_d(qslp->upper[col]),
 								mpq_get_d(p_sol[i+qslp->nstruct]), mpq_get_d(dz[col]), qslp->colnames[col], i,
 								"(real)");
 			}
