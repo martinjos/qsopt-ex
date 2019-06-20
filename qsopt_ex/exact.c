@@ -821,7 +821,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 																mpq_t * p_sol,
 																mpq_t * d_sol,
 																QSbasis * basis,
-																mpq_t const * const delta)
+																mpq_t const delta)
 {
 	/* local variables */
 	register int i,
@@ -964,28 +964,76 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* now we check the bounds on the logical variables */
 		if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
 		{
-			rval = 0;
-			if(!msg_lvl)
+			mpq_add(num2, num2, delta);
+			if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
 			{
-				MESSAGE(0, "constraint %s artificial (%lg) bellow lower"
-								 " bound (%lg), actual LHS (%lg), actual RHS (%lg)",
-								 qslp->rownames[i], mpq_get_d (num2), 
-								 mpq_get_d (qslp->lower[rowmap[i]]), mpq_get_d (rhs_copy[i]),
-								 mpq_get_d (qslp->rhs[i]));
+				rval = 0;
+				if(!msg_lvl)
+				{
+					MESSAGE(0, "constraint %s artificial (%lg) below lower"
+									 " bound (%lg), actual LHS (%lg), actual RHS (%lg)",
+									 qslp->rownames[i], mpq_get_d (num2),
+									 mpq_get_d (qslp->lower[rowmap[i]]), mpq_get_d (rhs_copy[i]),
+									 mpq_get_d (qslp->rhs[i]));
+				}
+				goto CLEANUP;
 			}
-			goto CLEANUP;
+			else
+			{
+				rval = 2;  /* provisionally delta-sat */
+			}
 		}
-		else if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
+		if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 		{
-			rval = 0;
-			if(!msg_lvl)
+			mpq_sub(num2, num2, delta);
+			if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 			{
-				MESSAGE(0, "constraint %s artificial (%lg) bellow lower bound"
-								 " (%lg)", qslp->rownames[i], mpq_get_d (num2),
-								 mpq_get_d (qslp->upper[rowmap[i]]));
+				rval = 0;
+				if(!msg_lvl)
+				{
+					MESSAGE(0, "constraint %s artificial (%lg) above upper bound"
+									 " (%lg)", qslp->rownames[i], mpq_get_d (num2),
+									 mpq_get_d (qslp->upper[rowmap[i]]));
+				}
+				goto CLEANUP;
 			}
-			goto CLEANUP;
+			else
+			{
+				rval = 2;  /* provisionally delta-sat */
+			}
 		}
+	}
+
+	/* check for delta-sat */
+	/* ensure that each objective function term is within delta of its bound
+	 * in the direction of optimization */
+	/* we must be minimizing, and all objective function terms must have lower
+	 * bounds of zero and positive coefficients - let's assume this for now */
+	/* also, let's assume that there are no row objectives (I think this is
+	 * not officially supported anyway) */
+	int delta_sat = 1;
+	for (i = qslp->nstruct; i--;)
+	{
+		col = structmap[i];
+		if (mpq_cmp_ui (qslp->obj[col], 0UL, 1UL) > 0)
+		{
+			/* found non-zero objective coefficient */
+			if (mpq_cmp (p_sol[i], delta) >= 0)
+			{
+				if (rval == 2)
+				{
+					rval = 0;  /* failed - not delta-sat */
+					goto CLEANUP;
+				}
+				delta_sat = 0;
+				break;
+			}
+		}
+	}
+	if (delta_sat)
+	{
+		rval = 2;  /* confirmed delta-sat */
+		goto CLEANUP;
 	}
 
 	/* compute the upper and lower bound dual variables, note that dl is the dual
