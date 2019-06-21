@@ -840,8 +840,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	mpq_t *dz = 0;
 	int objsense = (qslp->objsense == QS_MIN) ? 1 : -1;
 	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0 : 100000 * (1 - p->simplex_display);
-	int rval = 1;									/* store whether or not the solution is optimal, we start 
-																 * assuming it is. */
+	int rval = QS_EXACT_UNKNOWN;
 	mpq_t num1,
 	  num2,
 	  num3,
@@ -858,7 +857,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	/* now check if the given basis is the optimal basis */
 	if (mpq_QSload_basis (p, basis))
 	{
-		rval = 0;
+		rval = QS_EXACT_UNKNOWN;
 		MESSAGE (msg_lvl, "QSload_basis failed");
 		goto CLEANUP;
 	}
@@ -867,7 +866,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* check that the upper and lower bound define a non-empty space */
 		if (mpq_cmp (qslp->lower[structmap[i]], qslp->upper[structmap[i]]) > 0)
 		{
-			rval = 0;
+			rval = QS_EXACT_UNSAT;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "variable %s has empty feasible range [%lg,%lg]",
@@ -893,7 +892,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_set (p_sol[i], qslp->lower[structmap[i]]);
 			break;
 		default:
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			MESSAGE (msg_lvl, "Unknown Variable basic status %d, for variable "
 							 "(%s,%d)", basis->cstat[i], qslp->colnames[i], i);
 			goto CLEANUP;
@@ -905,7 +904,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* check that the upper and lower bound define a non-empty space */
 		if (mpq_cmp (qslp->lower[rowmap[i]], qslp->upper[rowmap[i]]) > 0)
 		{
-			rval = 0;
+			rval = QS_EXACT_UNSAT;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "constraint %s logical has empty feasible range "
@@ -931,7 +930,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_set (p_sol[i + basis->nstruct], qslp->lower[rowmap[i]]);
 			break;
 		default:
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			MESSAGE (msg_lvl, "Unknown Variable basic status %d, for constraint "
 							 "(%s,%d)", basis->cstat[i], qslp->rownames[i], i);
 			goto CLEANUP;
@@ -973,7 +972,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_add(num2, num2, delta);
 			if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
 			{
-				rval = 0;
+				rval = QS_EXACT_UNKNOWN;
 				if(!msg_lvl)
 				{
 					MESSAGE(0, "constraint %s artificial (%lg) below lower"
@@ -986,7 +985,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			}
 			else
 			{
-				rval = 2;  /* provisionally delta-sat */
+				rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 			}
 		}
 		if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
@@ -994,7 +993,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_sub(num2, num2, delta);
 			if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 			{
-				rval = 0;
+				rval = QS_EXACT_UNKNOWN;
 				if(!msg_lvl)
 				{
 					MESSAGE(0, "constraint %s artificial (%lg) above upper bound"
@@ -1005,7 +1004,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			}
 			else
 			{
-				rval = 2;  /* provisionally delta-sat */
+				rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 			}
 		}
 	}
@@ -1026,9 +1025,10 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			/* found non-zero objective coefficient */
 			if (mpq_cmp (p_sol[i], delta) >= 0)
 			{
-				if (rval == 2)
+				if (rval == QS_EXACT_DELTA_SAT)
 				{
-					rval = 0;  /* failed - not delta-sat */
+					/* not delta-sat after all - just an infeasible primal assignment */
+					rval = QS_EXACT_UNKNOWN;
 					goto CLEANUP;
 				}
 				delta_sat = 0;
@@ -1038,7 +1038,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	}
 	if (delta_sat)
 	{
-		rval = 2;  /* confirmed delta-sat */
+		rval = QS_EXACT_DELTA_SAT;  /* confirmed delta-sat */
 		goto CLEANUP;
 	}
 
@@ -1084,7 +1084,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
 		{
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "lower bound (%s,%d) slack (%lg) and dual variable (%lg)"
@@ -1102,7 +1102,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
 		{
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "upper bound (%lg) variable (%lg) and dual variable"
@@ -1155,7 +1155,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
 		{
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "lower bound (%s,%d) slack (%lg) and dual variable (%lg)"
@@ -1173,7 +1173,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
 		{
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "upper bound (%lg) variable (%lg) and dual variable"
@@ -1189,7 +1189,9 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	/* now check the objective values */
 	if (mpq_cmp (p_obj, d_obj) != 0)
 	{
-		rval = 0;
+		/* this condition shouldn't be possible, so we don't need to worry
+		 * about what the values are */
+		rval = QS_EXACT_UNKNOWN;
 		if(!msg_lvl)
 		{
 			MESSAGE(0, "primal and dual objective value differ %lg %lg",
@@ -1214,8 +1216,8 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		mpq_ILLlp_cache_free (p->cache);
 		if (mpq_ILLlp_cache_alloc (p->cache, qslp->nstruct, qslp->nrows))
 		{
-			rval = 0;
 			/* this message is important, so no conditional */
+			rval = QS_EXACT_UNKNOWN;
 			MESSAGE(0, "Cache allocation failed");
 			goto CLEANUP;
 		}
@@ -1244,7 +1246,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 							QSEXACT_SAVE_OPTIMAL_IND);
 		if (mpq_QSwrite_prob (p, stmp, "LP"))
 		{
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			MESSAGE (0, "Couldn't write output problem %s", stmp);
 			goto CLEANUP;
 		}
@@ -1252,13 +1254,13 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 							QSEXACT_SAVE_OPTIMAL_IND);
 		if (!(out_f = EGioOpen (stmp, "w+")))
 		{
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			MESSAGE (0, "Couldn't open solution file %s", stmp);
 			goto CLEANUP;
 		}
 		if (QSexact_print_sol (p, out_f))
 		{
-			rval = 0;
+			rval = QS_EXACT_UNKNOWN;
 			MESSAGE (0, "Couldn't write output solution %s", stmp);
 			goto CLEANUP;
 		}
@@ -1266,7 +1268,16 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		QSEXACT_SAVE_OPTIMAL_IND++;
 	}
 #endif
-	rval = 1;
+
+	/* optimal solution - determine whether SAT or UNSAT */
+	if (mpq_cmp_ui (d_obj, 0UL, 1UL) > 0)
+	{
+		rval = QS_EXACT_UNSAT;
+	}
+	else
+	{
+		rval = QS_EXACT_SAT;
+	}
 
 	/* ending */
 CLEANUP:
