@@ -2223,11 +2223,11 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 													mpq_t * const y,
 													QSbasis * const ebasis,
 													int simplexalgo,
-													int *status,
+													int *sat_status,
 													mpq_t const * const delta)
 {
 	/* local variables */
-	int last_status = 0, last_iter = 0;
+	int status = 0, last_status = 0, last_iter = 0;
 	QSbasis *basis = 0;
 	unsigned precision = EGLPNUM_PRECISION;
 	int rval = 0,
@@ -2241,7 +2241,6 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	mpf_t *x_mpf = 0,
 	 *y_mpf = 0;
 	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
-	*status = 0;
 	/* save the problem if we are really debugging */
 	if(DEBUG >= __QS_SB_VERB)
 	{
@@ -2263,13 +2262,13 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 						"continuing in extended precision", rval);
 		goto MPF_PRECISION;
 	}
-	EGcallD(dbl_QSget_status (p_dbl, status));
-	if ((*status == QS_LP_INFEASIBLE) &&
+	EGcallD(dbl_QSget_status (p_dbl, &status));
+	if ((status == QS_LP_INFEASIBLE) &&
 			(p_dbl->lp->final_phase != PRIMAL_PHASEI) &&
 			(p_dbl->lp->final_phase != DUAL_PHASEII))
-		EGcallD(dbl_QSopt_primal (p_dbl, status));
-	EGcallD(dbl_QSget_status (p_dbl, status));
-	last_status = *status;
+		EGcallD(dbl_QSopt_primal (p_dbl, &status));
+	EGcallD(dbl_QSget_status (p_dbl, &status));
+	last_status = status;
 	EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
 	/* optimization did not fail, so we must have a basis and solution values,
 	 * which may be delta-sat */
@@ -2288,7 +2287,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		goto CLEANUP;
 	}
 	MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
-	EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+	EGcallD(QSexact_basis_status (p_mpq, &status, basis, msg_lvl, &simplexalgo));
 	/* exact pivoting did not fail, so we must have solution values (and the
 	 * existing basis), which may be delta-sat */
 	EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
@@ -2300,7 +2299,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	}
 	else
 	{
-		last_status = *status = QS_LP_UNSOLVED;
+		last_status = status = QS_LP_UNSOLVED;
 	}
 	mpq_EGlpNumFreeArray (x_mpq);
 	mpq_EGlpNumFreeArray (y_mpq);
@@ -2368,13 +2367,13 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 			 }
 			goto NEXT_PRECISION;
 		}
-		EGcallD(mpf_QSget_status (p_mpf, status));
-		if ((*status == QS_LP_INFEASIBLE) &&
+		EGcallD(mpf_QSget_status (p_mpf, &status));
+		if ((status == QS_LP_INFEASIBLE) &&
 				(p_mpf->lp->final_phase != PRIMAL_PHASEI) &&
 				(p_mpf->lp->final_phase != DUAL_PHASEII))
-			EGcallD(mpf_QSopt_primal (p_mpf, status));
-		EGcallD(mpf_QSget_status (p_mpf, status));
-		last_status = *status;
+			EGcallD(mpf_QSopt_primal (p_mpf, &status));
+		EGcallD(mpf_QSget_status (p_mpf, &status));
+		last_status = status;
 		EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
 		/* optimization did not fail, so we must have a basis and solution values,
 		 * which may be delta-sat */
@@ -2393,7 +2392,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 			goto CLEANUP;
 		}
 		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
-		EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+		EGcallD(QSexact_basis_status (p_mpq, &status, basis, msg_lvl, &simplexalgo));
 		/* exact pivoting did not fail, so we must have solution values (and the
 		 * existing basis), which may be delta-sat */
 		EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
@@ -2405,7 +2404,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		}
 		else
 		{
-			last_status = *status = QS_LP_UNSOLVED;
+			last_status = status = QS_LP_UNSOLVED;
 		}
 		mpq_EGlpNumFreeArray (x_mpq);
 		mpq_EGlpNumFreeArray (y_mpq);
