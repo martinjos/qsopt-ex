@@ -754,7 +754,13 @@ int QSexact_optimal_test (mpq_QSdata * p,
 	if (qslp->nrows != p->cache->nrows || qslp->nstruct != p->cache->nstruct)
 	{
 		mpq_ILLlp_cache_free (p->cache);
-		EGcallD(mpq_ILLlp_cache_alloc (p->cache, qslp->nstruct, qslp->nrows));
+		if (mpq_ILLlp_cache_alloc (p->cache, qslp->nstruct, qslp->nrows))
+		{
+			rval = 0;
+			/* this message is important, so no conditional */
+			MESSAGE(0, "Cache allocation failed");
+			goto CLEANUP;
+		}
 	}
 	p->cache->status = QS_LP_OPTIMAL;
 	p->qstatus = QS_LP_OPTIMAL;
@@ -1206,7 +1212,13 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	if (qslp->nrows != p->cache->nrows || qslp->nstruct != p->cache->nstruct)
 	{
 		mpq_ILLlp_cache_free (p->cache);
-		EGcallD(mpq_ILLlp_cache_alloc (p->cache, qslp->nstruct, qslp->nrows));
+		if (mpq_ILLlp_cache_alloc (p->cache, qslp->nstruct, qslp->nrows))
+		{
+			rval = 0;
+			/* this message is important, so no conditional */
+			MESSAGE(0, "Cache allocation failed");
+			goto CLEANUP;
+		}
 	}
 	p->cache->status = QS_LP_OPTIMAL;
 	p->qstatus = QS_LP_OPTIMAL;
