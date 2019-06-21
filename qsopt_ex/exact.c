@@ -2267,7 +2267,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	if ((*status == QS_LP_INFEASIBLE) &&
 			(p_dbl->lp->final_phase != PRIMAL_PHASEI) &&
 			(p_dbl->lp->final_phase != DUAL_PHASEII))
-		dbl_QSopt_primal (p_dbl, status);
+		EGcallD(dbl_QSopt_primal (p_dbl, status));
 	EGcallD(dbl_QSget_status (p_dbl, status));
 	last_status = *status;
 	EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
@@ -2386,7 +2386,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		if ((*status == QS_LP_INFEASIBLE) &&
 				(p_mpf->lp->final_phase != PRIMAL_PHASEI) &&
 				(p_mpf->lp->final_phase != DUAL_PHASEII))
-			mpf_QSopt_primal (p_mpf, status);
+			EGcallD(mpf_QSopt_primal (p_mpf, status));
 		EGcallD(mpf_QSget_status (p_mpf, status));
 		last_status = *status;
 		EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
