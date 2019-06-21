@@ -1471,6 +1471,50 @@ static void optimal_output (mpq_QSdata * p_mpq,
 }
 
 /* ========================================================================= */
+/** @brief print onto screen (if enable) a message indicating that we have
+ * successfully solved the delta-satisfiability problem, and save (if x and y
+ * are non NULL respectivelly) the optimal primal/dual solution provided in
+ * x_mpq and y_mpq.
+ * @param p_mpq the problem data.
+ * @param x where to store the optimal primal solution (if not null).
+ * @param y where to store the optimal dual solution (if not null).
+ * @param x_mpq  the optimal primal solution.
+ * @param y_mpq  the optimal dual solution.
+ * @param delta  the tolerance parameter.
+ * */
+/* ========================================================================= */
+static void delta_solved_output (mpq_QSdata * p_mpq,
+																 mpq_t * const x,
+																 mpq_t * const y,
+																 mpq_t * x_mpq,
+																 mpq_t * y_mpq,
+																 int sat_status,
+																 mpq_t const delta)
+{
+	if (p_mpq->simplex_display)
+	{
+		QSlog("delta-satisfiability problem solved exactly (result = %s)"
+		      " with delta = %lg",
+					sat_status == QS_EXACT_SAT ? "sat"
+				: sat_status == QS_EXACT_UNSAT ? "unsat"
+				: sat_status == QS_EXACT_DELTA_SAT ? "delta-sat" : "unknown",
+				  mpq_get_d(delta));
+	}
+	if (y)
+	{
+		unsigned sz = __EGlpNumArraySize (y_mpq);
+		while (sz--)
+			mpq_set (y[sz], y_mpq[sz]);
+	}
+	if (x)
+	{
+		unsigned sz = __EGlpNumArraySize (x_mpq);
+		while (sz--)
+			mpq_set (x[sz], x_mpq[sz]);
+	}
+}
+
+/* ========================================================================= */
 /** @brief get the status for a given basis in rational arithmetic, it should
  * also leave everything set to get primal/dual solutions when needed.
  * */
@@ -2247,7 +2291,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 													QSbasis * const ebasis,
 													int simplexalgo,
 													int *sat_status,
-													mpq_t const * const delta)
+													mpq_t const delta)
 {
 	/* local variables */
 	int status = 0, last_status = 0, last_iter = 0;
@@ -2264,6 +2308,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	mpf_t *x_mpf = 0,
 	 *y_mpf = 0;
 	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
+	*sat_status = QS_EXACT_UNKNOWN;
 	/* save the problem if we are really debugging */
 	if(DEBUG >= __QS_SB_VERB)
 	{
@@ -2304,9 +2349,10 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	dbl_EGlpNumFreeArray (x_dbl);
 	dbl_EGlpNumFreeArray (y_dbl);
 	basis = dbl_QSget_basis (p_dbl);
-	if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
+	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
+	if (QS_EXACT_UNKNOWN != *sat_status)
 	{
-		optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+		delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 		goto CLEANUP;
 	}
 	MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
@@ -2315,9 +2361,10 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	 * existing basis), which may be delta-sat */
 	EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 	EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
-	if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
+	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
+	if (QS_EXACT_UNKNOWN != *sat_status)
 	{
-		optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+		delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 		goto CLEANUP;
 	}
 	else
@@ -2409,9 +2456,10 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		y_mpq = QScopy_array_mpf_mpq (y_mpf);
 		mpf_EGlpNumFreeArray (x_mpf);
 		mpf_EGlpNumFreeArray (y_mpf);
-		if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
+		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
+		if (QS_EXACT_UNKNOWN != *sat_status)
 		{
-			optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+			delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 			goto CLEANUP;
 		}
 		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
@@ -2420,9 +2468,10 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		 * existing basis), which may be delta-sat */
 		EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 		EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
-		if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
+		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
+		if (QS_EXACT_UNKNOWN != *sat_status)
 		{
-			optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+			delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 			goto CLEANUP;
 		}
 		else

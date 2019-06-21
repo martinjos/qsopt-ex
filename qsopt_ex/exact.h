@@ -377,7 +377,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 													QSbasis * const basis,
 													int simplexalgo,
 													int *status,
-													mpq_t const * const delta);
+													mpq_t const delta);
 
 /* ========================================================================= */
 /** @brief Initializator for global data, this is needed mainly for defining
