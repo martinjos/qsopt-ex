@@ -2271,53 +2271,39 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	EGcallD(dbl_QSget_status (p_dbl, status));
 	last_status = *status;
 	EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
-	/* deal with the problem depending on what status we got from our optimizer */
-	if (*status == QS_LP_OPTIMAL)
+	/* optimization did not fail, so we must have a basis and solution values,
+	 * which may be delta-sat */
+	x_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->ncols);
+	y_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->nrows);
+	EGcallD(dbl_QSget_x_array (p_dbl, x_dbl));
+	EGcallD(dbl_QSget_pi_array (p_dbl, y_dbl));
+	x_mpq = QScopy_array_dbl_mpq (x_dbl);
+	y_mpq = QScopy_array_dbl_mpq (y_dbl);
+	dbl_EGlpNumFreeArray (x_dbl);
+	dbl_EGlpNumFreeArray (y_dbl);
+	basis = dbl_QSget_basis (p_dbl);
+	if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
 	{
-		x_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->ncols);
-		y_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->nrows);
-		EGcallD(dbl_QSget_x_array (p_dbl, x_dbl));
-		EGcallD(dbl_QSget_pi_array (p_dbl, y_dbl));
-		x_mpq = QScopy_array_dbl_mpq (x_dbl);
-		y_mpq = QScopy_array_dbl_mpq (y_dbl);
-		dbl_EGlpNumFreeArray (x_dbl);
-		dbl_EGlpNumFreeArray (y_dbl);
-		basis = dbl_QSget_basis (p_dbl);
-		if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
-		{
-			optimal_output (p_mpq, x, y, x_mpq, y_mpq);
-			goto CLEANUP;
-		}
-		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
-		EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
-		if (*status == QS_LP_OPTIMAL)
-		{
-			EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
-			EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
-			if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
-			{
-				optimal_output (p_mpq, x, y, x_mpq, y_mpq);
-				goto CLEANUP;
-			}
-			else
-			{
-				last_status = *status = QS_LP_UNSOLVED;
-			}
-		}
-		else
-		{
-			if(!msg_lvl)
-			{
-				MESSAGE(0,"Status is not optimal, but %d", *status);
-			}
-		}
-		mpq_EGlpNumFreeArray (x_mpq);
-		mpq_EGlpNumFreeArray (y_mpq);
+		optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+		goto CLEANUP;
+	}
+	MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
+	EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+	/* exact pivoting did not fail, so we must have solution values (and the
+	 * existing basis), which may be delta-sat */
+	EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
+	EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
+	if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
+	{
+		optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+		goto CLEANUP;
 	}
 	else
 	{
-		IFMESSAGE(p_mpq->simplex_display,"Re-trying inextended precision");
+		last_status = *status = QS_LP_UNSOLVED;
 	}
+	mpq_EGlpNumFreeArray (x_mpq);
+	mpq_EGlpNumFreeArray (y_mpq);
 	/* if we reach this point, then we have to keep going, we use the previous
 	 * basis ONLY if the previous precision think that it has the optimal
 	 * solution, otherwise we start from scratch. */
@@ -2390,50 +2376,39 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		EGcallD(mpf_QSget_status (p_mpf, status));
 		last_status = *status;
 		EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
-		/* deal with the problem depending on status we got from our optimizer */
-		if (*status == QS_LP_OPTIMAL)
+		/* optimization did not fail, so we must have a basis and solution values,
+		 * which may be delta-sat */
+		basis = mpf_QSget_basis (p_mpf);
+		x_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->ncols);
+		y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
+		EGcallD(mpf_QSget_x_array (p_mpf, x_mpf));
+		EGcallD(mpf_QSget_pi_array (p_mpf, y_mpf));
+		x_mpq = QScopy_array_mpf_mpq (x_mpf);
+		y_mpq = QScopy_array_mpf_mpq (y_mpf);
+		mpf_EGlpNumFreeArray (x_mpf);
+		mpf_EGlpNumFreeArray (y_mpf);
+		if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
 		{
-			basis = mpf_QSget_basis (p_mpf);
-			x_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->ncols);
-			y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
-			EGcallD(mpf_QSget_x_array (p_mpf, x_mpf));
-			EGcallD(mpf_QSget_pi_array (p_mpf, y_mpf));
-			x_mpq = QScopy_array_mpf_mpq (x_mpf);
-			y_mpq = QScopy_array_mpf_mpq (y_mpf);
-			mpf_EGlpNumFreeArray (x_mpf);
-			mpf_EGlpNumFreeArray (y_mpf);
-			if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
-			{
-				optimal_output (p_mpq, x, y, x_mpq, y_mpq);
-				goto CLEANUP;
-			}
-			MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
-			EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
-			if (*status == QS_LP_OPTIMAL)
-			{
-				EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
-				EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
-				if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
-				{
-					optimal_output (p_mpq, x, y, x_mpq, y_mpq);
-					goto CLEANUP;
-				}
-				else
-				{
-					last_status = *status = QS_LP_UNSOLVED;
-				}
-			}
-			else
-			{
-				MESSAGE (msg_lvl, "Status is not optimal, but %d", *status);
-			}
-			mpq_EGlpNumFreeArray (x_mpq);
-			mpq_EGlpNumFreeArray (y_mpq);
+			optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+			goto CLEANUP;
+		}
+		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
+		EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+		/* exact pivoting did not fail, so we must have solution values (and the
+		 * existing basis), which may be delta-sat */
+		EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
+		EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
+		if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
+		{
+			optimal_output (p_mpq, x, y, x_mpq, y_mpq);
+			goto CLEANUP;
 		}
 		else
 		{
-			MESSAGE(__QS_SB_VERB,"Re-trying inextended precision");
+			last_status = *status = QS_LP_UNSOLVED;
 		}
+		mpq_EGlpNumFreeArray (x_mpq);
+		mpq_EGlpNumFreeArray (y_mpq);
 	NEXT_PRECISION:
 		mpf_QSfree_prob (p_mpf);
 		p_mpf = 0;
