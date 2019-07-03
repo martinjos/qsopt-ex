@@ -59,14 +59,11 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	mpq_t num1,
 	  num2,
 	  num3,
-	  p_obj,
 	  d_obj;
 	mpq_init (num1);
 	mpq_init (num2);
 	mpq_init (num3);
-	mpq_init (p_obj);
 	mpq_init (d_obj);
-	mpq_set_ui (p_obj, 0UL, 1UL);
 	mpq_set_ui (d_obj, 0UL, 1UL);
 
 	/* now check if the given basis is the optimal basis */
@@ -220,8 +217,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	for (i = qslp->nstruct; i--;)
 	{
 		col = structmap[i];
-		mpq_mul (num1, qslp->obj[col], p_sol[i]);
-		mpq_add (p_obj, p_obj, num1);
 		mpq_t* arr = qslp->A.matval + qslp->A.matbeg[col];
 		int* iarr = qslp->A.matind + qslp->A.matbeg[col];
 		mpq_set (num1, qslp->obj[col]);
@@ -288,11 +283,9 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	for (i = qslp->nrows; i--;)
 	{
 		col = rowmap[i];
-		mpq_mul (num1, qslp->obj[col], p_sol[i + qslp->nstruct]);
 		WARNING (mpq_cmp (qslp->obj[col], mpq_zeroLpNum),
 						 "logical variable %s with non-zero objective function %lf",
 						 qslp->rownames[i], mpq_get_d (qslp->obj[col]));
-		mpq_add (p_obj, p_obj, num1);
 		mpq_t* arr = qslp->A.matval + qslp->A.matbeg[col];
 		int* iarr = qslp->A.matind + qslp->A.matbeg[col];
 		mpq_set (num1, qslp->obj[col]);
@@ -355,23 +348,10 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 	}
 
-	/* now check the objective values */
-	if (mpq_cmp (p_obj, d_obj) != 0)
-	{
-		/* this condition shouldn't be possible, so we don't need to worry
-		 * about what the values are */
-		rval = QS_EXACT_UNKNOWN;
-		if(!msg_lvl)
-		{
-			MESSAGE(0, "primal and dual objective value differ %lg %lg",
-							 mpq_get_d(p_obj), mpq_get_d(d_obj));
-		}
-		goto CLEANUP;
-	}
 	/* now we report optimality */
 	if(!msg_lvl)
 	{
-		MESSAGE(0, "Problem solved to optimality, LP value %lg", mpq_get_d(p_obj));
+		MESSAGE(0, "Problem solved to optimality, LP value %lg", mpq_get_d(d_obj));
 	}
 	/* now we load into cache the solution */
 	if (!p->cache)
@@ -394,7 +374,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	p->cache->status = QS_LP_OPTIMAL;
 	p->qstatus = QS_LP_OPTIMAL;
 	p->lp->basisstat.optimal = 1;
-	mpq_set (p->cache->val, p_obj);
+	mpq_set (p->cache->val, d_obj);
 	for (i = qslp->nstruct; i--;)
 	{
 		mpq_set (p->cache->x[i], p_sol[i]);
@@ -455,7 +435,6 @@ CLEANUP:
 	mpq_clear (num1);
 	mpq_clear (num2);
 	mpq_clear (num3);
-	mpq_clear (p_obj);
 	mpq_clear (d_obj);
 	return rval;
 }
