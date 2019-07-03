@@ -243,6 +243,30 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_mul (num3, dz[col], qslp->upper[col]);
 			mpq_add (d_obj, d_obj, num3);
 		}
+		/* dual feasibility */
+		int dual_sense = objsense * mpq_sgn (dz[col]);
+		if (dual_sense > 0 && mpq_equal(qslp->lower[col], mpq_NINFTY))
+		{
+			/* dual infeasible */
+			rval = QS_EXACT_UNKNOWN;
+			if(!msg_lvl)
+			{
+				MESSAGE(0, "solution is dual infeasible for variable %s"
+									 " (lower bound infinite)", qslp->colnames[i]);
+			}
+			goto CLEANUP;
+		}
+		else if (dual_sense < 0 && mpq_equal(qslp->upper[col], mpq_INFTY))
+		{
+			/* dual infeasible */
+			rval = QS_EXACT_UNKNOWN;
+			if(!msg_lvl)
+			{
+				MESSAGE(0, "solution is dual infeasible for variable %s"
+									 " (upper bound infinite)", qslp->colnames[i]);
+			}
+			goto CLEANUP;
+		}
 	}
 	/* finished problem variables, now do the same for the logical
 	 * variables (i.e. row slacks) */
@@ -271,6 +295,30 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		{
 			mpq_mul (num3, dz[col], qslp->upper[col]);
 			mpq_add (d_obj, d_obj, num3);
+		}
+		/* dual feasibility */
+		int dual_sense = objsense * mpq_sgn (dz[col]);
+		if (dual_sense > 0 && mpq_equal(qslp->lower[col], mpq_NINFTY))
+		{
+			/* dual infeasible */
+			rval = QS_EXACT_UNKNOWN;
+			if(!msg_lvl)
+			{
+				MESSAGE(0, "solution is dual infeasible for logical variable %s"
+									 " (lower bound infinite)", qslp->rownames[i]);
+			}
+			goto CLEANUP;
+		}
+		else if (dual_sense < 0 && mpq_equal(qslp->upper[col], mpq_INFTY))
+		{
+			/* dual infeasible */
+			rval = QS_EXACT_UNKNOWN;
+			if(!msg_lvl)
+			{
+				MESSAGE(0, "solution is dual infeasible for logical variable %s"
+									 " (upper bound infinite)", qslp->rownames[i]);
+			}
+			goto CLEANUP;
 		}
 	}
 
