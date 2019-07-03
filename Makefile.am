@@ -15,6 +15,7 @@ MAIN_SOURCE_FILES = \
 	qsopt_ex/util.c \
 	qsopt_ex/logging.c \
 	qsopt_ex/exact.c \
+	qsopt_ex/delta.c \
 	qsopt_ex/reporter.c \
 	qsopt_ex/eg_exutil.c \
 	qsopt_ex/eg_macros.c \
@@ -32,6 +33,7 @@ PUBLIC_HEADER_FILES = \
 	qsopt_ex/names.h \
 	qsopt_ex/symtab.h \
 	qsopt_ex/exact.h \
+	qsopt_ex/delta.h \
 	qsopt_ex/reporter.h \
 	qsopt_ex/eg_exutil.h \
 	qsopt_ex/eg_macros.h \

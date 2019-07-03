@@ -110,5 +110,6 @@
 
 #include "exact.h"
 #include "eg_exutil.h"
+#include "delta.h"
 
 #endif /* !QSOPT_EX_H */

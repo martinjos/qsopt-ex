@@ -139,21 +139,6 @@ int QSexact_optimal_test (mpq_QSdata * p,
 													QSbasis * basis);
 
 /* ========================================================================= */
-/** @brief Return codes for #QSexact_delta_solver and
- * #QSexact_delta_optimal_test */
-#define QS_EXACT_UNKNOWN   0
-#define QS_EXACT_UNSAT     1
-#define QS_EXACT_SAT       2
-#define QS_EXACT_DELTA_SAT 3
-
-/* ========================================================================= */
-int QSexact_delta_optimal_test (mpq_QSdata * p,
-																mpq_t * p_sol,
-																mpq_t * d_sol,
-																QSbasis * basis,
-																mpq_t const delta);
-
-/* ========================================================================= */
 /** @brief Print into a file the optimal solution.
  * @param p original problem.
  * @param out_f file where to write the solution.
@@ -275,6 +260,23 @@ void QSexact_write_row (EGioFile_t * out_f,
 #endif
 
 /* ========================================================================= */
+/** @brief get the status for a given basis in rational arithmetic, it should
+ * also leave everything set to get primal/dual solutions when needed.
+ * @param p_mpq       the problem data.
+ * @param status      where to store status of basis (optimal, infeasible,
+ *                    unbounded, or unsolved).
+ * @param basis       basis to be tested.
+ * @param msg_lvl     message level.
+ * @param simplexalgo may be updated with PRIMAL_SIMPLEX to indicate that
+ *                    subsequent solves should try primal.
+ */
+int QSexact_basis_status (mpq_QSdata * p_mpq,
+													int *status,
+													QSbasis * const basis,
+													const int msg_lvl,
+													int *const simplexalgo);
+
+/* ========================================================================= */
 /** @brief test whether given basis is primal and dual feasible in rational arithmetic. 
  * @param p_mpq   the problem data.
  * @param basis   basis to be tested.
@@ -352,32 +354,6 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 										QSbasis * const basis,
 										int simplexalgo,
 										int *status);
-
-/* ========================================================================= */
-/** @brief Given an mpq_QSdata problem, solve the delta-satisfiability problem
- * exactly.  The problem must be a feasible and bounded feasibility LP with
- * artificial variables for all constraints.
- * @param x if not null, we store here the primal solution to the 
- * problem (if it exist).
- * @param y if not null, we store here the dual solution to the
- * problem, 
- * @param p_mpq problem to solve for delta-satisfiability exactly.
- * @param status pointer to the integer where we will return the status
- * of the problem, either optimal, infeasible, or unbounded (we could also 
- * return time out).
- * @param simplexalgo whether to use primal or dual simplex while solving
- * to optimality the problem.
- * @param basis if not null, use the given basis to start the
- * iteration of simplex, and store here the optimal basis (if found).
- * @delta 
- * @return zero on success, non-zero otherwise. */
-int QSexact_delta_solver (mpq_QSdata * p_mpq,
-													mpq_t * const x,
-													mpq_t * const y,
-													QSbasis * const basis,
-													int simplexalgo,
-													int *status,
-													mpq_t const delta);
 
 /* ========================================================================= */
 /** @brief Initializator for global data, this is needed mainly for defining
