@@ -201,6 +201,11 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	if (QS_EXACT_SAT == rval || QS_EXACT_DELTA_SAT == rval)
 	{
 		/* we already have proof */
+		if(!msg_lvl)
+		{
+			MESSAGE(0, "Problem is proven %ssatisfiable",
+							QS_EXACT_DELTA_SAT==rval ? "delta-" : "");
+		}
 		goto CLEANUP;
 	}
 
@@ -269,84 +274,20 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 	}
 
-	/* now we report optimality */
-	if(!msg_lvl)
-	{
-		MESSAGE(0, "Problem solved to optimality, LP value %lg", mpq_get_d(d_obj));
-	}
-	/* now we load into cache the solution */
-	if (!p->cache)
-	{
-		p->cache = EGsMalloc (mpq_ILLlp_cache, 1);
-		mpq_EGlpNumInitVar (p->cache->val);
-		mpq_ILLlp_cache_init (p->cache);
-	}
-	if (qslp->nrows != p->cache->nrows || qslp->nstruct != p->cache->nstruct)
-	{
-		mpq_ILLlp_cache_free (p->cache);
-		if (mpq_ILLlp_cache_alloc (p->cache, qslp->nstruct, qslp->nrows))
-		{
-			/* this message is important, so no conditional */
-			rval = QS_EXACT_UNKNOWN;
-			MESSAGE(0, "Cache allocation failed");
-			goto CLEANUP;
-		}
-	}
-	p->cache->status = QS_LP_OPTIMAL;
-	p->qstatus = QS_LP_OPTIMAL;
-	p->lp->basisstat.optimal = 1;
-	mpq_set (p->cache->val, d_obj);
-	for (i = qslp->nstruct; i--;)
-	{
-		mpq_set (p->cache->x[i], p_sol[i]);
-		mpq_set (p->cache->rc[i], dz[structmap[i]]);
-	}
-	for (i = qslp->nrows; i--;)
-	{
-		mpq_set (p->cache->slack[i], p_sol[i + qslp->nstruct]);
-		mpq_set (p->cache->pi[i], d_sol[i]);
-	}
-
-	/* save the problem and solution if enablred */
-#if QSEXACT_SAVE_OPTIMAL
-	{
-		char stmp[1024];
-		EGioFile_t *out_f = 0;
-		snprintf (stmp, 1023, "%s-opt%03d.lp", p->name ? p->name : "UNNAMED",
-							QSEXACT_SAVE_OPTIMAL_IND);
-		if (mpq_QSwrite_prob (p, stmp, "LP"))
-		{
-			rval = QS_EXACT_UNKNOWN;
-			MESSAGE (0, "Couldn't write output problem %s", stmp);
-			goto CLEANUP;
-		}
-		snprintf (stmp, 1023, "%s-opt%03d.sol.gz", p->name ? p->name : "UNNAMED",
-							QSEXACT_SAVE_OPTIMAL_IND);
-		if (!(out_f = EGioOpen (stmp, "w+")))
-		{
-			rval = QS_EXACT_UNKNOWN;
-			MESSAGE (0, "Couldn't open solution file %s", stmp);
-			goto CLEANUP;
-		}
-		if (QSexact_print_sol (p, out_f))
-		{
-			rval = QS_EXACT_UNKNOWN;
-			MESSAGE (0, "Couldn't write output solution %s", stmp);
-			goto CLEANUP;
-		}
-		EGioClose (out_f);
-		QSEXACT_SAVE_OPTIMAL_IND++;
-	}
-#endif
-
-	/* optimal solution - determine whether SAT or UNSAT */
+	/* d_obj now provides a rigorous lower bound on the optimal objective value.
+	 * If this is positive, the original problem is unsatisfiable. */
 	if (mpq_cmp_ui (d_obj, 0UL, 1UL) > 0)
 	{
+		if(!msg_lvl)
+		{
+			MESSAGE(0, "Problem is proven unsatisfiable (dual objective = %g)",
+			        mpq_get_d (d_obj));
+		}
 		rval = QS_EXACT_UNSAT;
 	}
 	else
 	{
-		rval = QS_EXACT_SAT;
+		rval = QS_EXACT_UNKNOWN;
 	}
 
 	/* ending */
