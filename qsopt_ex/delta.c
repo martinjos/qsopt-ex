@@ -129,28 +129,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			}
 			goto CLEANUP;
 		}
-		/* set the variable to its apropiate values, depending its status */
-		switch (basis->rstat[i])
-		{
-		case QS_ROW_BSTAT_BASIC:
-			if (mpq_cmp (p_sol[i + basis->nstruct], qslp->upper[rowmap[i]]) > 0)
-				mpq_set (p_sol[i + basis->nstruct], qslp->upper[rowmap[i]]);
-			else if (mpq_cmp (p_sol[i + basis->nstruct], qslp->lower[rowmap[i]]) < 0)
-				mpq_set (p_sol[i + basis->nstruct], qslp->lower[rowmap[i]]);
-			break;
-		case QS_ROW_BSTAT_UPPER:
-			mpq_set (p_sol[i + basis->nstruct], qslp->upper[rowmap[i]]);
-			break;
-		case QS_ROW_BSTAT_LOWER:
-			mpq_set (p_sol[i + basis->nstruct], qslp->lower[rowmap[i]]);
-			break;
-		default:
-			rval = QS_EXACT_UNKNOWN;
-			MESSAGE (msg_lvl, "Unknown Variable basic status %d, for constraint "
-							 "(%s,%d)", basis->cstat[i], qslp->rownames[i], i);
-			goto CLEANUP;
-			break;
-		}
+		/* no need to set the value here, as it would get overwritten later */
 	}
 
 	/* compute the actual RHS */
