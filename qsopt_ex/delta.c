@@ -208,6 +208,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	 * solution. If the dual vector is feasible and the dual objective value is
 	 * positive, we can conclude unsat; otherwise, the status is unknown. */
 
+	/* finish computing the dual objective function */
 	/* compute the upper and lower bound dual variables, note that dl is the dual
 	 * of the lower bounds, and du the dual of the upper bound, dl >= 0 and du <=
 	 * 0 and A^t y + Idl + Idu = c, and the dual objective value is 
@@ -237,49 +238,9 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_mul (num3, dz[col], qslp->upper[col]);
 			mpq_add (d_obj, d_obj, num3);
 		}
-		/* now we check that only when the logical is tight then the dual
-		 * variable may be non-zero, also check for primal feasibility with respect
-		 * to lower/upper bounds. */
-		mpq_set_ui (num2, 0UL, 1UL);
-		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) > 0)
-		{
-			mpq_sub (num1, p_sol[i], qslp->lower[col]);
-			mpq_mul (num2, num1, dz[col]);
-		}
-		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
-		{
-			rval = QS_EXACT_UNKNOWN;
-			if(!msg_lvl)
-			{
-				MESSAGE(0, "lower bound (%s,%d) slack (%lg) and dual variable (%lg)"
-								 " don't satisfy complementary slacknes %s",
-								 qslp->colnames[i], i, mpq_get_d(num1), mpq_get_d(dz[col]),
-								 "(real)");
-			}
-			goto CLEANUP;
-		}
-		mpq_set_ui (num2, 0UL, 1UL);
-		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) < 0)
-		{
-			mpq_sub (num1, p_sol[i], qslp->upper[col]);
-			mpq_mul (num2, num1, dz[col]);
-		}
-		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
-		{
-			rval = QS_EXACT_UNKNOWN;
-			if(!msg_lvl)
-			{
-				MESSAGE(0, "upper bound (%lg) variable (%lg) and dual variable"
-									" (%lg) don't satisfy complementary slacknes for variable"
-									" (%s,%d) %s", mpq_get_d(qslp->upper[col]),
-									mpq_get_d(p_sol[i]), mpq_get_d(dz[col]), qslp->colnames[i],
-									i, "(real)");
-			}
-			goto CLEANUP;
-		}
 	}
-	/* complenetary slackness checked, now update the same for the logical
-	 * variables */
+	/* finished problem variables, now do the same for the logical
+	 * variables (i.e. row slacks) */
 	for (i = qslp->nrows; i--;)
 	{
 		col = rowmap[i];
@@ -305,46 +266,6 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		{
 			mpq_mul (num3, dz[col], qslp->upper[col]);
 			mpq_add (d_obj, d_obj, num3);
-		}
-		/* now we check that only when the primal variable is tight then the dual
-		 * variable may be non-zero, also check for primal feasibility with respect
-		 * to lower/upper bounds. */
-		mpq_set_ui (num2, 0UL, 1UL);
-		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) > 0)
-		{
-			mpq_sub (num1, p_sol[i + qslp->nstruct], qslp->lower[col]);
-			mpq_mul (num2, num1, dz[col]);
-		}
-		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
-		{
-			rval = QS_EXACT_UNKNOWN;
-			if(!msg_lvl)
-			{
-				MESSAGE(0, "lower bound (%s,%d) slack (%lg) and dual variable (%lg)"
-								 " don't satisfy complementary slacknes %s", 
-								 qslp->colnames[col], i, mpq_get_d(num1), mpq_get_d(dz[col]), 
-								 "(real)");
-			}
-			goto CLEANUP;
-		}
-		mpq_set_ui (num2, 0UL, 1UL);
-		if (objsense * mpq_cmp_ui (dz[col], 0UL, 1UL) < 0)
-		{
-			mpq_sub (num1, p_sol[i + qslp->nstruct], qslp->upper[col]);
-			mpq_mul (num2, num1, dz[col]);
-		}
-		if (mpq_cmp_ui (num2, 0UL, 1UL) != 0)
-		{
-			rval = QS_EXACT_UNKNOWN;
-			if(!msg_lvl)
-			{
-				MESSAGE(0, "upper bound (%lg) variable (%lg) and dual variable"
-								" (%lg) don't satisfy complementary slacknes for variable "
-								"(%s,%d) %s", mpq_get_d(qslp->upper[col]),
-								mpq_get_d(p_sol[i+qslp->nstruct]), mpq_get_d(dz[col]), qslp->colnames[col], i,
-								"(real)");
-			}
-			goto CLEANUP;
 		}
 	}
 
