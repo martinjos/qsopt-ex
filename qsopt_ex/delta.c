@@ -55,7 +55,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	mpq_t *dz = 0;
 	int objsense = (qslp->objsense == QS_MIN) ? 1 : -1;
 	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0 : 100000 * (1 - p->simplex_display);
-	int rval = QS_EXACT_UNKNOWN;
+	int rval = QS_EXACT_UNKNOWN;  /* safe fallback value */
 	mpq_t num1,
 	  num2,
 	  num3,
@@ -91,27 +91,43 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			goto CLEANUP;
 		}
 		/* set the variable to its apropiate values, depending its status */
-		switch (basis->cstat[i])
+		if (0 != mpq_sgn (qslp->obj[structmap[i]]))
 		{
-		case QS_COL_BSTAT_FREE:
-		case QS_COL_BSTAT_BASIC:
-			if (mpq_cmp (p_sol[i], qslp->upper[structmap[i]]) > 0)
+			/* artificial variable, added by my solver - set value to zero */
+			mpq_set_ui(p_sol[i], 0UL, 1UL);
+			if (0 != mpq_sgn(qslp->lower[structmap[i]]))
+			{
+				rval = QS_EXACT_UNKNOWN;
+				MESSAGE(0, "ERROR IN INPUT: variable %s has non-zero objective"
+				           " coefficient, and its lower bound is not zero",
+								 qslp->colnames[i]);
+				goto CLEANUP;
+			}
+		}
+		else
+		{
+			switch (basis->cstat[i])
+			{
+			case QS_COL_BSTAT_FREE:
+			case QS_COL_BSTAT_BASIC:
+				if (mpq_cmp (p_sol[i], qslp->upper[structmap[i]]) > 0)
+					mpq_set (p_sol[i], qslp->upper[structmap[i]]);
+				else if (mpq_cmp (p_sol[i], qslp->lower[structmap[i]]) < 0)
+					mpq_set (p_sol[i], qslp->lower[structmap[i]]);
+				break;
+			case QS_COL_BSTAT_UPPER:
 				mpq_set (p_sol[i], qslp->upper[structmap[i]]);
-			else if (mpq_cmp (p_sol[i], qslp->lower[structmap[i]]) < 0)
+				break;
+			case QS_COL_BSTAT_LOWER:
 				mpq_set (p_sol[i], qslp->lower[structmap[i]]);
-			break;
-		case QS_COL_BSTAT_UPPER:
-			mpq_set (p_sol[i], qslp->upper[structmap[i]]);
-			break;
-		case QS_COL_BSTAT_LOWER:
-			mpq_set (p_sol[i], qslp->lower[structmap[i]]);
-			break;
-		default:
-			rval = QS_EXACT_UNKNOWN;
-			MESSAGE (msg_lvl, "Unknown Variable basic status %d, for variable "
-							 "(%s,%d)", basis->cstat[i], qslp->colnames[i], i);
-			goto CLEANUP;
-			break;
+				break;
+			default:
+				rval = QS_EXACT_UNKNOWN;
+				MESSAGE (msg_lvl, "Unknown Variable basic status %d, for variable "
+								 "(%s,%d)", basis->cstat[i], qslp->colnames[i], i);
+				goto CLEANUP;
+				break;
+			}
 		}
 	}
 	for (i = basis->nrows; i--;)
@@ -148,7 +164,9 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 	}
 
-	/* now replace the row slack */
+	rval = QS_EXACT_SAT;  /* provisionally SAT */
+
+	/* now replace the row slack, and check for delta-sat/sat */
 	for (i = qslp->nrows; i--;)
 	{
 		mpq_mul (num1, qslp->rhs[i], d_sol[i]);
@@ -166,75 +184,32 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_add(num2, num2, delta);
 			if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
 			{
-				rval = QS_EXACT_UNKNOWN;
-				if(!msg_lvl)
-				{
-					MESSAGE(0, "constraint %s artificial (%lg) below lower"
-									 " bound (%lg), actual LHS (%lg), actual RHS (%lg)",
-									 qslp->rownames[i], mpq_get_d (num2),
-									 mpq_get_d (qslp->lower[rowmap[i]]), mpq_get_d (rhs_copy[i]),
-									 mpq_get_d (qslp->rhs[i]));
-				}
-				goto CLEANUP;
+				rval = QS_EXACT_UNKNOWN;  /* may be unsat */
+				break;
 			}
-			else
-			{
-				rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
-			}
+			rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 		}
 		if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 		{
 			mpq_sub(num2, num2, delta);
 			if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 			{
-				rval = QS_EXACT_UNKNOWN;
-				if(!msg_lvl)
-				{
-					MESSAGE(0, "constraint %s artificial (%lg) above upper bound"
-									 " (%lg)", qslp->rownames[i], mpq_get_d (num2),
-									 mpq_get_d (qslp->upper[rowmap[i]]));
-				}
-				goto CLEANUP;
+				rval = QS_EXACT_UNKNOWN;  /* may be unsat */
+				break;
 			}
-			else
-			{
-				rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
-			}
+			rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 		}
 	}
 
-	/* check for delta-sat */
-	/* ensure that each objective function term is within delta of its bound
-	 * in the direction of optimization */
-	/* we must be minimizing, and all objective function terms must have lower
-	 * bounds of zero and positive coefficients - let's assume this for now */
-	/* also, let's assume that there are no row objectives (I think this is
-	 * not officially supported anyway) */
-	int delta_sat = 1;
-	for (i = qslp->nstruct; i--;)
+	if (QS_EXACT_SAT == rval || QS_EXACT_DELTA_SAT == rval)
 	{
-		col = structmap[i];
-		if (mpq_cmp_ui (qslp->obj[col], 0UL, 1UL) > 0)
-		{
-			/* found non-zero objective coefficient */
-			if (mpq_cmp (p_sol[i], delta) >= 0)
-			{
-				if (rval == QS_EXACT_DELTA_SAT)
-				{
-					/* not delta-sat after all - just an infeasible primal assignment */
-					rval = QS_EXACT_UNKNOWN;
-					goto CLEANUP;
-				}
-				delta_sat = 0;
-				break;
-			}
-		}
-	}
-	if (delta_sat)
-	{
-		rval = QS_EXACT_DELTA_SAT;  /* confirmed delta-sat */
+		/* we already have proof */
 		goto CLEANUP;
 	}
+
+	/* We have now determined that nothing can be learnt from the primal
+	 * solution. If the dual vector is feasible and the dual objective value is
+	 * positive, we can conclude unsat; otherwise, the status is unknown. */
 
 	/* compute the upper and lower bound dual variables, note that dl is the dual
 	 * of the lower bounds, and du the dual of the upper bound, dl >= 0 and du <=
