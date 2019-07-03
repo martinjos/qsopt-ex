@@ -189,7 +189,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			}
 			rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 		}
-		if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
+		else if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 		{
 			mpq_sub(num2, num2, delta);
 			if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
