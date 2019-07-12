@@ -36,6 +36,7 @@
 #include "editor_dbl.h"
 #include "editor_mpf.h"
 #include "lpdata_mpq.h"
+#include "fct_mpq.h"
 
 /* ========================================================================= */
 int QSexact_delta_optimal_test (mpq_QSdata * p,
@@ -400,6 +401,22 @@ static void delta_solved_output (mpq_QSdata * p_mpq,
 	}
 }
 
+static int ensure_solutions_available (mpq_QSdata * p_mpq, int status)
+{
+	int rval = 0;
+	if (!p_mpq->lp->basisstat.optimal)
+	{
+		mpq_ILLfct_compute_xbz (p_mpq->lp);
+		mpq_ILLfct_compute_piz (p_mpq->lp);
+		mpq_ILLfct_compute_dz (p_mpq->lp);
+		p_mpq->lp->basisstat.optimal = 1;  // Pretend that it is optimal
+		EGcallD(mpq_QSgrab_cache (p_mpq, status));
+		p_mpq->lp->basisstat.optimal = 0;
+	}
+CLEANUP:
+	return rval;
+}
+
 /* ========================================================================= */
 /* Important: the input problem must be feasible and bounded.  */
 int QSexact_delta_solver (mpq_QSdata * p_mpq,
@@ -474,8 +491,9 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	}
 	MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 	EGcallD(QSexact_basis_status (p_mpq, &status, basis, msg_lvl, &simplexalgo));
-	/* exact pivoting did not fail, so we must have solution values (and the
-	 * existing basis), which may be delta-sat */
+	/* exact pivoting did not fail, so we have (or can derive) solution values,
+	 * which may be delta-sat */
+	EGcallD(ensure_solutions_available (p_mpq, status));
 	EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 	EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
@@ -581,8 +599,9 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		}
 		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 		EGcallD(QSexact_basis_status (p_mpq, &status, basis, msg_lvl, &simplexalgo));
-		/* exact pivoting did not fail, so we must have solution values (and the
-		 * existing basis), which may be delta-sat */
+		/* exact pivoting did not fail, so we have (or can derive) solution values,
+		 * which may be delta-sat */
+		EGcallD(ensure_solutions_available (p_mpq, status));
 		EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 		EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
