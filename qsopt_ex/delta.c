@@ -404,6 +404,7 @@ static void delta_solved_output (mpq_QSdata * p_mpq,
 static int ensure_solutions_available (mpq_QSdata * p_mpq, int status)
 {
 	int rval = 0;
+	char save_optimal = p_mpq->lp->basisstat.optimal;
 	if (!p_mpq->lp->basisstat.optimal)
 	{
 		mpq_ILLfct_compute_xbz (p_mpq->lp);
@@ -411,9 +412,9 @@ static int ensure_solutions_available (mpq_QSdata * p_mpq, int status)
 		mpq_ILLfct_compute_dz (p_mpq->lp);
 		p_mpq->lp->basisstat.optimal = 1;  // Pretend that it is optimal
 		EGcallD(mpq_QSgrab_cache (p_mpq, status));
-		p_mpq->lp->basisstat.optimal = 0;
 	}
 CLEANUP:
+	p_mpq->lp->basisstat.optimal = save_optimal;
 	return rval;
 }
 
