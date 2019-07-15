@@ -1506,6 +1506,7 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 		dbl_EGlpNumFreeArray (x_dbl);
 		dbl_EGlpNumFreeArray (y_dbl);
 		basis = dbl_QSget_basis (p_dbl);
+		MESSAGE(0, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 		if (QSexact_optimal_test (p_mpq, x_mpq, y_mpq, basis))
 		{
 			optimal_output (p_mpq, x, y, x_mpq, y_mpq);
@@ -1529,6 +1530,7 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 			goto CLEANUP;
 		}
 		basis = dbl_QSget_basis (p_dbl);
+		MESSAGE(0, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 		/* case continued after end of switch statement */
 		break;
 	case QS_LP_UNBOUNDED:
@@ -1664,6 +1666,7 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 		{
 		case QS_LP_OPTIMAL:
 			basis = mpf_QSget_basis (p_mpf);
+			MESSAGE(0, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 			x_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->ncols);
 			y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
 			EGcallD(mpf_QSget_x_array (p_mpf, x_mpf));
@@ -1690,6 +1693,7 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 				goto CLEANUP;
 			}
 			basis = mpf_QSget_basis (p_mpf);
+			MESSAGE(0, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 			/* case continued after end of switch statement */
 			break;
 		case QS_LP_OBJ_LIMIT:
@@ -1767,6 +1771,31 @@ CLEANUP:
 	mpq_QSfree_basis (basis);
 	dbl_QSfree_prob (p_dbl);
 	mpf_QSfree_prob (p_mpf);
+	return rval;
+}
+
+#define QSEXACT_BASIS_HASH_PRIME 15485863UL
+unsigned long QSexact_basis_hash(QSbasis* basis)
+{
+	unsigned long rval = 0;
+	if (!basis)
+		return rval;
+	rval = (unsigned long) basis->nstruct + rval * QSEXACT_BASIS_HASH_PRIME;
+	rval = (unsigned long) basis->nrows + rval * QSEXACT_BASIS_HASH_PRIME;
+	if (basis->cstat)
+	{
+		for (int i = 0; i < basis->nstruct; i++)
+		{
+			rval = (unsigned long) basis->cstat[i] + rval * QSEXACT_BASIS_HASH_PRIME;
+		}
+	}
+	if (basis->rstat)
+	{
+		for (int i = 0; i < basis->nrows; i++)
+		{
+			rval = (unsigned long) basis->rstat[i] + rval * QSEXACT_BASIS_HASH_PRIME;
+		}
+	}
 	return rval;
 }
 

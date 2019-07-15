@@ -355,6 +355,8 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 										int simplexalgo,
 										int *status);
 
+unsigned long QSexact_basis_hash(QSbasis* basis);
+
 /* ========================================================================= */
 /** @brief Initializator for global data, this is needed mainly for defining
  * constants in extended floating point precision and for rational precision.

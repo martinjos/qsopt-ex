@@ -483,6 +483,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	dbl_EGlpNumFreeArray (x_dbl);
 	dbl_EGlpNumFreeArray (y_dbl);
 	basis = dbl_QSget_basis (p_dbl);
+	MESSAGE(0, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
 	if (QS_EXACT_UNKNOWN != *sat_status)
 	{
@@ -583,6 +584,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		/* optimization did not fail, so we must have a basis and solution values,
 		 * which may be delta-sat */
 		basis = mpf_QSget_basis (p_mpf);
+		MESSAGE(0, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 		x_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->ncols);
 		y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
 		EGcallD(mpf_QSget_x_array (p_mpf, x_mpf));
