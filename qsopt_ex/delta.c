@@ -177,25 +177,24 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* always replace row slacks, even if non-basic */
 		mpq_set (p_sol[qslp->nstruct + i], num2);
 		/* now we check the bounds on the logical variables */
-		if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
+		if (QS_EXACT_UNKNOWN != rval)
 		{
-			mpq_add(num2, num2, delta);
 			if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
 			{
-				rval = QS_EXACT_UNKNOWN;  /* may be unsat */
-				break;
+				mpq_add(num2, num2, delta);
+				if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
+					rval = QS_EXACT_UNKNOWN;  /* may be unsat */
+				else
+					rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 			}
-			rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
-		}
-		else if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
-		{
-			mpq_sub(num2, num2, delta);
-			if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
+			else if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 			{
-				rval = QS_EXACT_UNKNOWN;  /* may be unsat */
-				break;
+				mpq_sub(num2, num2, delta);
+				if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
+					rval = QS_EXACT_UNKNOWN;  /* may be unsat */
+				else
+					rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 			}
-			rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
 		}
 	}
 
