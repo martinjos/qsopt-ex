@@ -27,8 +27,10 @@ static unsigned k2 = 3;
 static int use_scaling = 1;
 /** @brief use dlouble floating point output */
 static int use_double = 0;
+/** @brief use MPS file format */
+static int use_mps = 0;
 /** @brief file name output. */
-const char *out_file = "output.lp";
+const char *out_file = NULL;
 /** @brief Strength level required */
 static unsigned t = 2;
 /** @brief temporal string space */
@@ -55,6 +57,7 @@ static inline void sl_usage (char const *const s)
 	fprintf (stderr,
 					 "    -s n   if n > 0 scale the resulting LP, otherwise present the unscaled LP\n");
 	fprintf (stderr, "    -t n   required strength of the OA (>=1)\n");
+	fprintf (stderr, "    -m n   if n > 0 output in MPS format, otherwise, write it in LP format\n");
 }
 
 /* ========================================================================= */
@@ -63,7 +66,7 @@ static inline int sl_parseargs (int argc,
 																char **argv)
 {
 	int c;
-	while ((c = getopt (argc, argv, "a:b:c:e:s:d:o:t:")) != EOF)
+	while ((c = getopt (argc, argv, "a:b:c:e:m:s:d:o:t:")) != EOF)
 	{
 		switch (c)
 		{
@@ -85,6 +88,9 @@ static inline int sl_parseargs (int argc,
 		case 'd':
 			use_double = atoi (optarg);
 			break;
+		case 'm':
+			use_mps = atoi (optarg);
+			break;
 		case 'o':
 			out_file = optarg;
 			break;
@@ -100,6 +106,13 @@ static inline int sl_parseargs (int argc,
 	{
 		sl_usage (argv[0]);
 		return 1;
+	}
+	if (!out_file)
+	{
+		if (use_mps)
+			out_file = "output.mps";
+		else
+			out_file = "output.lp";
 	}
 	fprintf (stderr, "Running %s\nOptions:\n", argv[0]);
 	fprintf (stderr, "\tfirst level columns = %d\n", k1);
@@ -221,12 +234,12 @@ int main (int argc,
 	{
 		snprintf (strtmp, (size_t)1023, "OA_SL_%d-%d_%d-%d_t-%d", s1, k1, s2, k2, t);
 		p_dbl = QScopy_prob_mpq_dbl (p_mpq, strtmp);
-		rval = dbl_QSwrite_prob (p_dbl, out_file, "LP");
+		rval = dbl_QSwrite_prob (p_dbl, out_file, use_mps ? "MPS" : "LP");
 		CHECKRVALG (rval, CLEANUP);
 	}
 	else
 	{
-		rval = mpq_QSwrite_prob (p_mpq, out_file, "LP");
+		rval = mpq_QSwrite_prob (p_mpq, out_file, use_mps ? "MPS" : "LP");
 		CHECKRVALG (rval, CLEANUP);
 	}
 
