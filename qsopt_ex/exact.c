@@ -792,7 +792,7 @@ int QSexact_optimal_test (mpq_QSdata * p,
 		}
 		snprintf (stmp, 1023, "%s-opt%03d.sol.gz", p->name ? p->name : "UNNAMED",
 							QSEXACT_SAVE_OPTIMAL_IND);
-		if (!(out_f = EGioOpen (stmp, "w+")))
+		if (!(out_f = EGioOpen (stmp, "w")))
 		{
 			rval = 0;
 			MESSAGE (0, "Couldn't open solution file %s", stmp);
