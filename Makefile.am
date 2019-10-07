@@ -181,6 +181,7 @@ BUILT_SOURCES = $(TEMPLATE_FILES)
 
 
 AM_CFLAGS = -I$(top_srcdir)/qsopt_ex -I$(top_builddir)/qsopt_ex
+AM_LDFLAGS = -Wl,--enable-new-dtags
 
 # Library files
 lib_LTLIBRARIES = libqsopt_ex.la
