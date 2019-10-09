@@ -39,6 +39,11 @@
 /tests/eg_sloan
 /tests/test_qs
 
+# Documentation
+
+/ESolver_Doxygen_Tags
+/doc/
+
 # http://www.gnu.org/software/automake
 
 .deps
