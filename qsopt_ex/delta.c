@@ -102,7 +102,7 @@ static void optimal_output (mpq_QSdata * p_mpq,
  * problem, either delta-feasible or infeasible (we could also return time
  * out).
  * @return zero on success, non-zero otherwise. */
-int QSdelta_solver (mpq_QSdata * p_mpq,
+int QSdelta_solver (mpq_QSdata const * p_orig,
                     mpq_t const delta,
                     mpq_t * const x,
                     mpq_t * const y,
@@ -116,6 +116,7 @@ int QSdelta_solver (mpq_QSdata * p_mpq,
   unsigned precision = EGLPNUM_PRECISION;
   int rval = 0,
     it = QS_EXACT_MAX_ITER;
+  mpq_QSdata *p_mpq = 0;
   dbl_QSdata *p_dbl = 0;
   mpf_QSdata *p_mpf = 0;
   double *x_dbl = 0,
@@ -125,7 +126,13 @@ int QSdelta_solver (mpq_QSdata * p_mpq,
   mpf_t *x_mpf = 0,
    *y_mpf = 0;
   int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
-  *status = 0;
+  *status = QS_LP_UNSOLVED;
+  p_mpq = mpq_QScopy_prob (p_orig, "mpq_feas_problem");
+  /* set the objective function to zero (in the copy) */
+  for (int i = 0; i < p_mpq->qslp->nstruct; i++)
+  {
+    mpq_QSchange_objcoef(p_mpq, i, mpq_zeroLpNum);
+  }
   /* save the problem if we are really debugging */
   if(DEBUG >= __QS_SB_VERB)
   {

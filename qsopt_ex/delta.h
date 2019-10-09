@@ -11,7 +11,7 @@
 /* ========================================================================= */
 /** @brief Given an mpq_QSdata problem, solve the corresponding
  * delta-feasibility problem exactly.
- * @param p_mpq problem for which to determine delta-feasibility exactly.
+ * @param p_orig problem for which to determine delta-feasibility exactly.
  * @param delta the delta to use for determining delta-feasibility; the maximum
  * perturbation of RHS/bounds required to make a delta-feasible solution
  * feasible.
@@ -27,7 +27,7 @@
  * problem, either delta-feasible or infeasible (we could also return time
  * out).
  * @return zero on success, non-zero otherwise. */
-int QSdelta_solver (mpq_QSdata * p_mpq,
+int QSdelta_solver (mpq_QSdata const * p_orig,
                     mpq_t const delta,
                     mpq_t * const x,
                     mpq_t * const y,
