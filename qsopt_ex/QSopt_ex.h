@@ -109,6 +109,7 @@
 #include "eg_numutil_mpf.h"
 
 #include "exact.h"
+#include "delta.h"
 #include "eg_exutil.h"
 #include "exact_delta.h"
 
