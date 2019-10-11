@@ -213,8 +213,9 @@ int QSdelta_solver (mpq_QSdata * p_orig,
   mpf_t *x_mpf = 0,
    *y_mpf = 0;
   mpq_t zero;
-  mpq_init(zero);
-  int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
+  mpq_EGlpNumInitVar (zero);
+  mpq_EGlpNumZero (zero);
+  int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_orig->simplex_display) * 10000;
   *status = QS_LP_UNSOLVED;
   p_mpq = mpq_QScopy_prob (p_orig, "mpq_feas_problem");
   /* set the objective function to zero (in the copy) */
@@ -275,7 +276,6 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       goto CLEANUP;
   }
   IFMESSAGE(p_mpq->simplex_display,"Re-trying inextended precision");
-  // %%
   /* if we reach this point, then we have to keep going, we use the previous
    * basis ONLY if the previous precision thinks that it has the optimal
    * solution, otherwise we start from scratch. */
@@ -377,6 +377,7 @@ CLEANUP:
   mpq_EGlpNumFreeArray (y_mpq);
   mpf_EGlpNumFreeArray (x_mpf);
   mpf_EGlpNumFreeArray (y_mpf);
+  mpq_EGlpNumClearVar (zero);
   if (ebasis && basis)
   {
     ILL_IFFREE (ebasis->cstat, char);
@@ -390,6 +391,7 @@ CLEANUP:
   mpq_QSfree_basis (basis);
   dbl_QSfree_prob (p_dbl);
   mpf_QSfree_prob (p_mpf);
+  mpq_QSfree_prob (p_mpq);
 
   EG_RETURN (rval);
 }
