@@ -48,8 +48,13 @@ static void infeasible_output (mpq_QSdata * p_mpq,
 }
 
 /* ========================================================================= */
-/** Check for and report delta-feasibility of the basis                      *
- *  @return 1 if basis is delta-feasible, 0 otherwise.                       */
+/** Check for and report delta-feasibility of the basis
+ * @param p_mpq the problem data.
+ * @param delta the maximum infeasibility of a delta-feasible solution.
+ * @param status where to store the new status (feasible or delta-feasible),
+ * if applicable
+ * @param x where to store a delta-feasible primal solution (if not null).
+ * */
 /* ========================================================================= */
 int check_delta_feas (mpq_QSdata const * p_mpq,
                       mpq_t * delta,
@@ -60,6 +65,7 @@ int check_delta_feas (mpq_QSdata const * p_mpq,
   mpq_t infeas, err1, err2;
   int rval = 0;
   mpq_lpinfo* lp = p_mpq->lp;
+  mpq_ILLlpdata* qslp = p_mpq->qslp;
 
   mpq_EGlpNumInitVar (infeas);
   mpq_EGlpNumInitVar (err1);
@@ -107,7 +113,6 @@ int check_delta_feas (mpq_QSdata const * p_mpq,
       QSlog("Problem is feasible");
     }
     *status = QS_LP_FEASIBLE;
-    rval = 1;
   }
   else if (!mpq_EGlpNumIsLess (*delta, infeas))
   {
@@ -118,19 +123,49 @@ int check_delta_feas (mpq_QSdata const * p_mpq,
             mpq_EGlpNumToLf (infeas));
     }
     *status = QS_LP_DELTA_FEASIBLE;
-    rval = 1;
   }
 
-  if (rval && x)
+  if (x && (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status))
   {
-    // TODO: set x
+    // Populate x with values of structural variables
+    if (lp->nrows != qslp->nrows ||
+        lp->ncols != qslp->ncols ||
+        lp->nnbasic != qslp->nstruct ||
+        lp->ncols != lp->nrows + lp->nnbasic)
+    {
+      QSlog("Unexpected condition: lp and qslp dimensions do not match");
+      rval = 1;
+      ILL_CLEANUP;
+    }
+    mpq_t *tempx = mpq_EGlpNumAllocArray (lp->ncols);
+    // Set basic variables
+    for (i = 0; i < lp->nrows; i++)
+      mpq_EGlpNumCopy (tempx[lp->baz[i]], lp->xbz[i]);
+    // Set non-basic variables
+    for (i = 0; i < lp->nnbasic; i++)
+    {
+      col = lp->nbaz[i];
+      if (lp->vstat[col] == STAT_UPPER)
+        mpq_EGlpNumCopy (tempx[col], lp->uz[col]);
+      else if (lp->vstat[col] == STAT_LOWER)
+        mpq_EGlpNumCopy (tempx[col], lp->lz[col]);
+      else
+        mpq_EGlpNumZero (tempx[col]);
+    }
+    // Get structural variables
+    for (i = 0; i < qslp->nstruct; i++)
+    {
+      mpq_EGlpNumCopy (x[i], tempx[qslp->structmap[i]]);
+    }
   }
+
+CLEANUP:
 
   mpq_EGlpNumClearVar (infeas);
   mpq_EGlpNumClearVar (err1);
   mpq_EGlpNumClearVar (err2);
 
-  return rval;
+  EG_RETURN (rval);
 }
 
 /* ========================================================================= */
@@ -149,8 +184,8 @@ int check_delta_feas (mpq_QSdata const * p_mpq,
  * @param simplexalgo whether to use primal or dual simplex while solving the
  * delta-feasibility problem.
  * @param status pointer to the integer where we will return the status of the
- * problem, either delta-feasible or infeasible (we could also return time
- * out).
+ * problem, either feasible, delta-feasible or infeasible (we could also return
+ * time out).
  * @return zero on success, non-zero otherwise. */
 int QSdelta_solver (mpq_QSdata * p_orig,
                     mpq_t * const delta,
@@ -232,7 +267,8 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       goto CLEANUP;
     }
     /* check for delta-feasibility */
-    if (check_delta_feas (p_mpq, delta, status, x))
+    EGcallD(check_delta_feas (p_mpq, delta, status, x));
+    if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
       goto CLEANUP;
   }
   IFMESSAGE(p_mpq->simplex_display,"Re-trying inextended precision");
@@ -323,7 +359,8 @@ int QSdelta_solver (mpq_QSdata * p_orig,
         goto CLEANUP;
       }
       /* check for delta-feasibility */
-      if (check_delta_feas (p_mpq, delta, status, x))
+      EGcallD(check_delta_feas (p_mpq, delta, status, x));
+      if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
         goto CLEANUP;
     }
   NEXT_PRECISION:
@@ -350,7 +387,9 @@ CLEANUP:
   mpq_QSfree_basis (basis);
   dbl_QSfree_prob (p_dbl);
   mpf_QSfree_prob (p_mpf);
-  return rval;
+
+  EG_RETURN (rval);
 }
+
 
 /** @} */
