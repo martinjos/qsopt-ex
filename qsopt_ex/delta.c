@@ -50,14 +50,15 @@ static void infeasible_output (mpq_QSdata * p_mpq,
 /* ========================================================================= */
 /** Check for and report delta-feasibility of the basis
  * @param p_mpq the problem data.
- * @param delta the maximum infeasibility of a delta-feasible solution.
+ * @param delta the maximum infeasibility of a delta-feasible solution; updated
+ * with the actual infeasibility if delta-feasibility determined.
  * @param status where to store the new status (feasible or delta-feasible),
  * if applicable
  * @param x where to store a delta-feasible primal solution (if not null).
  * */
 /* ========================================================================= */
 int check_delta_feas (mpq_QSdata const * p_mpq,
-                      mpq_t * delta,
+                      mpq_t delta,
                       int *status,
                       mpq_t * const x)
 {
@@ -114,7 +115,7 @@ int check_delta_feas (mpq_QSdata const * p_mpq,
     }
     *status = QS_LP_FEASIBLE;
   }
-  else if (!mpq_EGlpNumIsLess (*delta, infeas))
+  else if (!mpq_EGlpNumIsLess (delta, infeas))
   {
     // delta-feasible
     if (p_mpq->simplex_display)
@@ -122,6 +123,7 @@ int check_delta_feas (mpq_QSdata const * p_mpq,
       QSlog("Problem is delta-feasible with delta = %lf",
             mpq_EGlpNumToLf (infeas));
     }
+    mpq_EGlpNumCopy (delta, infeas);
     *status = QS_LP_DELTA_FEASIBLE;
   }
 
@@ -174,7 +176,8 @@ CLEANUP:
  * @param p_mpq problem for which to determine delta-feasibility exactly.
  * @param delta the delta to use for determining delta-feasibility; the maximum
  * perturbation of RHS/bounds required to make a delta-feasible solution
- * feasible.
+ * feasible; updated with the actual infeasibility if delta-feasibility
+ * determined.
  * @param x if not null, we store here a delta-feasible solution to the problem
  * (if delta-feasibility established).
  * @param y if not null, we store here a certificate of infeasibility for the
@@ -188,7 +191,7 @@ CLEANUP:
  * time out).
  * @return zero on success, non-zero otherwise. */
 int QSdelta_solver (mpq_QSdata * p_orig,
-                    mpq_t * const delta,
+                    mpq_t delta,
                     mpq_t * const x,
                     mpq_t * const y,
                     QSbasis * const ebasis,
