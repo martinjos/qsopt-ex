@@ -80,3 +80,21 @@ void QSlog(const char *format, ...)
 	QSlogv(format, args);
 	va_end(args);
 }
+
+static void nonl_logfunc(const char *buffer, void *data)
+{
+	fprintf(stderr, "%s", buffer);
+}
+
+void QSlog_nonl(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+
+	QSlog_func save = global_log_func;
+	global_log_func = nonl_logfunc;
+	QSlogv(format, args);
+	global_log_func = save;
+
+	va_end(args);
+}

@@ -28,6 +28,8 @@ void QSlogv(const char *format, va_list args)
 	__attribute__ ((format(__printf__, 1, 0)));
 void QSlog(const char *format, ...)
 	__attribute__ ((format(__printf__, 1, 0)));
+void QSlog_nonl(const char *format, ...)
+	__attribute__ ((format(__printf__, 1, 0)));
 
 
 /** @name Code Location Utility:
@@ -45,7 +47,7 @@ void QSlog(const char *format, ...)
  * given message and location information */
 #define IFMESSAGE(__display,...) do{\
 	if((__display)>0){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOC__;}}while(0)
 
 /** @brief if return value is non-zero warn on screen */
@@ -61,7 +63,7 @@ void QSlog(const char *format, ...)
 #define EXITL(__L,__A,...) ({\
 	if(__L<=DEBUG){\
 	if(__A){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOC__;\
 		_exit(1);}}})
 
@@ -72,7 +74,7 @@ void QSlog(const char *format, ...)
 #define TESTL(__L,__A,...) ({\
 	if(__L<=DEBUG){\
 	if(__A){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOC__;\
 		return 1;}}})
 
@@ -87,7 +89,7 @@ void QSlog(const char *format, ...)
  * in the code, it also print the file and line where this happend */
 #define TESTGL(__L,__A,__B,...) ({\
 	if((__L)<=DEBUG && (__A)){\
-		QSlog("ERROR: " __VA_ARGS__);					\
+		QSlog_nonl("ERROR: " __VA_ARGS__);					\
 		__EG_PRINTLOC__;\
 		goto __B;}})
 
@@ -96,7 +98,7 @@ void QSlog(const char *format, ...)
 #define EG_RETURN(__A) {\
 	const int __RVAL__ = (__A);\
 	if(__RVAL__){\
-		QSlog("rval %d",__RVAL__);						\
+		QSlog_nonl("rval %d",__RVAL__);						\
 		__EG_PRINTLOC__;}\
 	return __RVAL__;}
 
@@ -104,7 +106,7 @@ void QSlog(const char *format, ...)
  * in the code, it also print the file and line where this happend */
 #define TESTG(__A,__B,...) ({\
 	if(__A){\
-		QSlog("ERROR: " __VA_ARGS__);					\
+		QSlog_nonl("ERROR: " __VA_ARGS__);					\
 		__EG_PRINTLOC__;\
 		goto __B;}})
 
@@ -112,7 +114,7 @@ void QSlog(const char *format, ...)
  * in the current function, it also print the file and line where this happend */
 #define TESTGD(__A,...) ({\
 	if(__A){\
-		QSlog("ERROR: " __VA_ARGS__);					\
+		QSlog_nonl("ERROR: " __VA_ARGS__);					\
 		__EG_PRINTLOC__;\
 		goto CLEANUP;}})
 
@@ -121,7 +123,7 @@ void QSlog(const char *format, ...)
  * happend */
 #define TEST(__A,...) ({\
 	if(__A){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOC__;\
 		return 1;}})
 
@@ -130,7 +132,7 @@ void QSlog(const char *format, ...)
  * code and reduce it to the empty instruction. */
 #define MESSAGEF(__A,...) ({\
 	if(__A <= DEBUG ){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOCF__(__F);}})
 
 /** @brief This macro print messages to the screen when the debug level is as
@@ -138,7 +140,7 @@ void QSlog(const char *format, ...)
  * code and reduce it to the empty instruction. */
 #define MESSAGE(__A,...) ({\
 	if(__A <= DEBUG ){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOC__;}})
 
 /** @brief This macro print messages to the screen when the verbose level is as
@@ -158,7 +160,7 @@ void QSlog(const char *format, ...)
  * instruction. */
 #define WARNINGL(__L,__A,...) ({\
 	if((__A)&&(DEBUG>=__L)){\
-		QSlog("WARNING: " __VA_ARGS__);\
+		QSlog_nonl("WARNING: " __VA_ARGS__);\
 		__EG_PRINTLOC__;}})
 
 #else
@@ -179,7 +181,7 @@ void QSlog(const char *format, ...)
  * happend */
 #define FTEST(__A,...) ({\
 	if(__A){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOC__;\
 		return 1;}})
 
@@ -188,7 +190,7 @@ void QSlog(const char *format, ...)
  * happend */
 #define FTESTG(__A,__B,...) ({\
 	if(__A){\
-		QSlog("ERROR: " __VA_ARGS__);					\
+		QSlog_nonl("ERROR: " __VA_ARGS__);					\
 		__EG_PRINTLOC__;\
 		goto __B;}})
 
@@ -196,7 +198,7 @@ void QSlog(const char *format, ...)
  * true. */
 #define WARNING(__A,...) ({									\
 	if(__A){																	\
-		QSlog("WARNING: " __VA_ARGS__);		\
+		QSlog_nonl("WARNING: " __VA_ARGS__);		\
 		__EG_PRINTLOC__;}})
 
 /** @brief this macro test if a value is non zero, if it is it print where is
@@ -213,7 +215,7 @@ void QSlog(const char *format, ...)
  * this happend */
 #define EXIT(__A,...) ({										\
 	if(__A){																	\
-		QSlog("EXIT: " __VA_ARGS__);			\
+		QSlog_nonl("EXIT: " __VA_ARGS__);			\
 		__EG_PRINTLOC__;\
 		exit(EXIT_FAILURE);}})
 
@@ -230,7 +232,7 @@ void QSlog(const char *format, ...)
  * message and return the '__RVAL' value. */
 #define ADVTESTL(__L,__A,__RVAL,...) ({\
 	if((DEBUG>=__L)&&(__A)){\
-		QSlog(__VA_ARGS__);										\
+		QSlog_nonl(__VA_ARGS__);										\
 		__EG_PRINTLOC__;\
 		return __RVAL;}})
 
