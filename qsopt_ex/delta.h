@@ -27,8 +27,8 @@
  * problem, either delta-feasible or infeasible (we could also return time
  * out).
  * @return zero on success, non-zero otherwise. */
-int QSdelta_solver (mpq_QSdata const * p_orig,
-                    mpq_t const delta,
+int QSdelta_solver (mpq_QSdata * p_orig,
+                    mpq_t * const delta,
                     mpq_t * const x,
                     mpq_t * const y,
                     QSbasis * const ebasis,

@@ -228,6 +228,8 @@ typedef struct itcnt_t
 #define QS_LP_ABORTED		7
 #define QS_LP_NUMERR            8
 #define QS_LP_OBJ_LIMIT         9
+#define QS_LP_FEASIBLE         11
+#define QS_LP_DELTA_FEASIBLE   17
 #define QS_LP_MODIFIED        100
 #define QS_LP_CHANGE_PREC			1024
 #endif
