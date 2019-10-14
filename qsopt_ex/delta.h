@@ -1,6 +1,7 @@
 #ifndef __DELTA_H__
 #define __DELTA_H__
 
+#include "basicdefs.h"
 #include "qstruct_mpq.h"
 
 /** @file

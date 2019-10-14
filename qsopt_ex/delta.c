@@ -9,11 +9,20 @@
 
 #include "delta.h"
 
+#include "qstruct_dbl.h"
+#include "qstruct_mpf.h"
+
+#include "basis_mpq.h"
 #include "exact.h"
 #include "except.h"
 #include "editor_dbl.h"
 #include "editor_mpf.h"
 #include "eg_macros.h"
+#include "eg_timer.h"
+#include "fct_mpq.h"
+#include "qsopt_mpf.h"
+#include "qsopt_dbl.h"
+#include "simplex_mpq.h"
 
 /* ========================================================================= */
 /** @brief Used as separator while printing output to the screen (controlled by
@@ -171,6 +180,99 @@ CLEANUP:
 }
 
 /* ========================================================================= */
+/** @brief get the status for a given basis in rational arithmetic, it should
+ * also leave everything set to get primal/dual solutions when needed.
+ * */
+int QSdelta_basis_status (mpq_QSdata * p_mpq,
+                          int *status,
+                          QSbasis * const basis,
+                          const int msg_lvl,
+                          int *const simplexalgo)
+{
+  int rval = 0,
+  singular;
+  mpq_feas_info fi;
+  EGtimer_t local_timer;
+  mpq_EGlpNumInitVar (fi.totinfeas);
+  EGtimerReset (&local_timer);
+  EGtimerStart (&local_timer);
+  EGcallD(mpq_QSload_basis (p_mpq, basis));
+  if (p_mpq->cache) 
+  {
+    mpq_ILLlp_cache_free (p_mpq->cache);
+    mpq_clear (p_mpq->cache->val);
+    ILL_IFFREE (p_mpq->cache, mpq_ILLlp_cache); 
+  }
+  p_mpq->qstatus = QS_LP_MODIFIED;
+  if(p_mpq->qslp->sinfo) 
+  {
+    mpq_ILLlp_sinfo_free(p_mpq->qslp->sinfo);
+    ILL_IFFREE(p_mpq->qslp->sinfo, mpq_ILLlp_sinfo); 
+  }
+  if(p_mpq->qslp->rA)
+  {
+    mpq_ILLlp_rows_clear (p_mpq->qslp->rA);
+    ILL_IFFREE (p_mpq->qslp->rA, mpq_ILLlp_rows);
+  }
+  mpq_free_internal_lpinfo (p_mpq->lp);
+  mpq_init_internal_lpinfo (p_mpq->lp);
+  EGcallD(mpq_build_internal_lpinfo (p_mpq->lp));
+  mpq_ILLfct_set_variable_type (p_mpq->lp);
+  EGcallD(mpq_ILLbasis_load (p_mpq->lp, p_mpq->basis));
+  EGcallD(mpq_ILLbasis_factor (p_mpq->lp, &singular));
+  memset (&(p_mpq->lp->basisstat), 0, sizeof (mpq_lp_status_info));
+  mpq_ILLfct_compute_piz (p_mpq->lp);
+  mpq_ILLfct_compute_dz (p_mpq->lp);
+  mpq_ILLfct_compute_xbz (p_mpq->lp);
+  mpq_ILLfct_check_pfeasible (p_mpq->lp, &fi, mpq_zeroLpNum);
+  mpq_ILLfct_check_dfeasible (p_mpq->lp, &fi, mpq_zeroLpNum);
+  mpq_ILLfct_set_status_values (p_mpq->lp, fi.pstatus, fi.dstatus, PHASEII,
+      PHASEII);
+  if (p_mpq->lp->basisstat.optimal)
+  {
+    *status = QS_LP_OPTIMAL;
+    EGcallD(mpq_QSgrab_cache (p_mpq, QS_LP_OPTIMAL));
+  }
+  else if (p_mpq->lp->basisstat.primal_infeasible
+      || p_mpq->lp->basisstat.dual_unbounded)
+  {
+    if (*status == QS_LP_INFEASIBLE)
+      *simplexalgo = PRIMAL_SIMPLEX;
+    *status = QS_LP_INFEASIBLE;
+    p_mpq->lp->final_phase = PRIMAL_PHASEI;
+    p_mpq->lp->pIpiz = mpq_EGlpNumAllocArray (p_mpq->lp->nrows);
+    mpq_ILLfct_compute_phaseI_piz (p_mpq->lp);
+  }
+  else if (p_mpq->lp->basisstat.primal_unbounded)
+    *status = QS_LP_UNBOUNDED;
+  else
+    *status = QS_LP_UNSOLVED;
+  EGtimerStop (&local_timer);
+  if(!msg_lvl)
+  {
+    MESSAGE(0, "Performing Rational Basic Solve on %s, %s, check"
+        " done in %lg seconds, PS %s %lg, DS %s %lg", p_mpq->name, 
+        (*status == QS_LP_OPTIMAL) ? "RAT_optimal" : 
+        ((*status == QS_LP_INFEASIBLE) ?  "RAT_infeasible" : 
+         ((*status == QS_LP_UNBOUNDED) ?  "RAT_unbounded" : "RAT_unsolved")),
+        local_timer.time, p_mpq->lp->basisstat.primal_feasible ? 
+        "F":(p_mpq->lp->basisstat.primal_infeasible ? "I" : "U"), 
+        p_mpq->lp->basisstat.primal_feasible ?
+        mpq_get_d(p_mpq->lp->objval) : 
+        (p_mpq->lp->basisstat.primal_infeasible ?
+         mpq_get_d(p_mpq->lp->pinfeas) : mpq_get_d(p_mpq->lp->objbound)), 
+        p_mpq->lp->basisstat.dual_feasible ? 
+        "F":(p_mpq->lp->basisstat.dual_infeasible ? "I" : "U"), 
+        p_mpq->lp->basisstat.dual_feasible ? mpq_get_d(p_mpq->lp->dobjval) 
+        :(p_mpq->lp->basisstat.dual_infeasible ? 
+          mpq_get_d(p_mpq->lp->dinfeas) : mpq_get_d(p_mpq->lp->objbound)) );
+  }
+CLEANUP:
+  mpq_EGlpNumClearVar (fi.totinfeas);
+  return rval;
+}
+
+/* ========================================================================= */
 /** @brief Given an mpq_QSdata problem, solve the corresponding
  * delta-feasibility problem exactly.
  * @param p_mpq problem for which to determine delta-feasibility exactly.
@@ -253,11 +355,13 @@ int QSdelta_solver (mpq_QSdata * p_orig,
   EGcallD(dbl_QSget_status (p_dbl, status));
   last_status = *status;
   EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
+  fprintf(stderr, "double status: %d\n", *status);
   /* deal with the problem depending on what status we got from our optimizer */
   if (*status == QS_LP_OPTIMAL || *status == QS_LP_UNBOUNDED || *status == QS_LP_INFEASIBLE)
   {
     basis = dbl_QSget_basis (p_dbl);
-    EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+    EGcallD(QSdelta_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+    fprintf(stderr, "mpq status following double: %d\n", *status);
     if (*status == QS_LP_INFEASIBLE)
     {
       y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
@@ -349,10 +453,12 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     last_status = *status;
     EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
     /* deal with the problem depending on status we got from our optimizer */
+    fprintf(stderr, "mpf status: %d\n", *status);
     if (*status == QS_LP_OPTIMAL || *status == QS_LP_UNBOUNDED || *status == QS_LP_INFEASIBLE)
     {
-      basis = dbl_QSget_basis (p_dbl);
-      EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+      basis = mpf_QSget_basis (p_mpf);
+      EGcallD(QSdelta_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
+      fprintf(stderr, "mpq status following mpf: %d\n", *status);
       if (*status == QS_LP_INFEASIBLE)
       {
         mpq_EGlpNumFreeArray (y_mpq);
