@@ -57,6 +57,80 @@ static void infeasible_output (mpq_QSdata * p_mpq,
 }
 
 /* ========================================================================= */
+/** @brief copy the primal solution out of p_mpq.
+ * @param x where to store the feasible primal solution.
+ * @param p_mpq the problem data.
+ * */
+/* ========================================================================= */
+static int copy_x (mpq_t * const x,
+                   const mpq_QSdata * p_mpq)
+{
+  int rval = 0;
+  int i, col;
+  mpq_t *tempx = 0;
+  mpq_lpinfo* lp = p_mpq->lp;
+  mpq_ILLlpdata* qslp = p_mpq->qslp;
+
+  // Populate x with values of structural variables
+  if (lp->nrows != qslp->nrows ||
+      lp->ncols != qslp->ncols ||
+      lp->nnbasic != qslp->nstruct ||
+      lp->ncols != lp->nrows + lp->nnbasic)
+  {
+    QSlog("Unexpected condition: lp and qslp dimensions do not match");
+    rval = 1;
+    ILL_CLEANUP;
+  }
+  tempx = mpq_EGlpNumAllocArray (lp->ncols);
+  // Set basic variables
+  for (i = 0; i < lp->nrows; i++)
+    mpq_EGlpNumCopy (tempx[lp->baz[i]], lp->xbz[i]);
+  // Set non-basic variables
+  for (i = 0; i < lp->nnbasic; i++)
+  {
+    col = lp->nbaz[i];
+    if (lp->vstat[col] == STAT_UPPER)
+      mpq_EGlpNumCopy (tempx[col], lp->uz[col]);
+    else if (lp->vstat[col] == STAT_LOWER)
+      mpq_EGlpNumCopy (tempx[col], lp->lz[col]);
+    else
+      mpq_EGlpNumZero (tempx[col]);
+  }
+  // Get structural variables
+  for (i = 0; i < qslp->nstruct; i++)
+  {
+    mpq_EGlpNumCopy (x[i], tempx[qslp->structmap[i]]);
+  }
+
+CLEANUP:
+
+  mpq_EGlpNumFreeArray (tempx);
+
+  EG_RETURN (rval);
+}
+
+/* ========================================================================= */
+/** @brief print into screen (if enable) a message indicating that we have
+ * successfully prove feasibility.
+ * @param p_mpq the problem data.
+ * */
+/* ========================================================================= */
+static int feasible_output (mpq_QSdata * p_mpq,
+                            mpq_t * const x)
+{
+  int rval = 0;
+
+  if (p_mpq->simplex_display)
+    QSlog("Problem is feasible");
+  if (x)
+    EGcallD(copy_x (x, p_mpq));
+
+CLEANUP:
+
+  EG_RETURN (rval);
+}
+
+/* ========================================================================= */
 /** Check for and report delta-feasibility of the basis
  * @param p_mpq the problem data.
  * @param delta the maximum infeasibility of a delta-feasible solution; updated
@@ -66,10 +140,10 @@ static void infeasible_output (mpq_QSdata * p_mpq,
  * @param x where to store a delta-feasible primal solution (if not null).
  * */
 /* ========================================================================= */
-int check_delta_feas (mpq_QSdata const * p_mpq,
-                      mpq_t delta,
-                      int *status,
-                      mpq_t * const x)
+static int check_delta_feas (mpq_QSdata const * p_mpq,
+                             mpq_t delta,
+                             int *status,
+                             mpq_t * const x)
 {
   int i, col;
   mpq_t infeas, err1, err2;
@@ -139,38 +213,7 @@ int check_delta_feas (mpq_QSdata const * p_mpq,
   }
 
   if (x && (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status))
-  {
-    // Populate x with values of structural variables
-    if (lp->nrows != qslp->nrows ||
-        lp->ncols != qslp->ncols ||
-        lp->nnbasic != qslp->nstruct ||
-        lp->ncols != lp->nrows + lp->nnbasic)
-    {
-      QSlog("Unexpected condition: lp and qslp dimensions do not match");
-      rval = 1;
-      ILL_CLEANUP;
-    }
-    mpq_t *tempx = mpq_EGlpNumAllocArray (lp->ncols);
-    // Set basic variables
-    for (i = 0; i < lp->nrows; i++)
-      mpq_EGlpNumCopy (tempx[lp->baz[i]], lp->xbz[i]);
-    // Set non-basic variables
-    for (i = 0; i < lp->nnbasic; i++)
-    {
-      col = lp->nbaz[i];
-      if (lp->vstat[col] == STAT_UPPER)
-        mpq_EGlpNumCopy (tempx[col], lp->uz[col]);
-      else if (lp->vstat[col] == STAT_LOWER)
-        mpq_EGlpNumCopy (tempx[col], lp->lz[col]);
-      else
-        mpq_EGlpNumZero (tempx[col]);
-    }
-    // Get structural variables
-    for (i = 0; i < qslp->nstruct; i++)
-    {
-      mpq_EGlpNumCopy (x[i], tempx[qslp->structmap[i]]);
-    }
-  }
+    EGcallD(copy_x (x, p_mpq));
 
 CLEANUP:
 
@@ -357,11 +400,11 @@ int QSdelta_solver (mpq_QSdata * p_orig,
   last_status = *status;
   EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
   /* deal with the problem depending on what status we got from our optimizer */
-  if (*status == QS_LP_OPTIMAL || *status == QS_LP_UNBOUNDED || *status == QS_LP_INFEASIBLE)
+  if (QS_LP_OPTIMAL == *status || QS_LP_UNBOUNDED == *status || QS_LP_INFEASIBLE == *status)
   {
     basis = dbl_QSget_basis (p_dbl);
     EGcallD(QSdelta_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
-    if (*status == QS_LP_INFEASIBLE)
+    if (QS_LP_INFEASIBLE == *status)
     {
       y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
       if (mpq_QSget_infeas_array (p_mpq, y_mpq))
@@ -371,6 +414,11 @@ int QSdelta_solver (mpq_QSdata * p_orig,
         goto MPF_PRECISION;
       }
       infeasible_output (p_mpq, y, y_mpq);
+      goto CLEANUP;
+    }
+    else if (QS_LP_FEASIBLE == *status)
+    {
+      EGcallD(feasible_output (p_mpq, x));
       goto CLEANUP;
     }
     /* check for delta-feasibility */
@@ -452,16 +500,21 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     last_status = *status;
     EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
     /* deal with the problem depending on status we got from our optimizer */
-    if (*status == QS_LP_OPTIMAL || *status == QS_LP_UNBOUNDED || *status == QS_LP_INFEASIBLE)
+    if (QS_LP_OPTIMAL == *status || QS_LP_UNBOUNDED == *status || QS_LP_INFEASIBLE == *status)
     {
       basis = mpf_QSget_basis (p_mpf);
       EGcallD(QSdelta_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
-      if (*status == QS_LP_INFEASIBLE)
+      if (QS_LP_INFEASIBLE == *status)
       {
         mpq_EGlpNumFreeArray (y_mpq);
         y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
         EGcallD(mpq_QSget_infeas_array (p_mpq, y_mpq));
         infeasible_output (p_mpq, y, y_mpq);
+        goto CLEANUP;
+      }
+      else if (QS_LP_FEASIBLE == *status)
+      {
+        EGcallD(feasible_output (p_mpq, x));
         goto CLEANUP;
       }
       /* check for delta-feasibility */
