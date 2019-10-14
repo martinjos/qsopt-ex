@@ -197,17 +197,17 @@ int QSdelta_basis_status (mpq_QSdata * p_mpq,
   EGtimerReset (&local_timer);
   EGtimerStart (&local_timer);
   EGcallD(mpq_QSload_basis (p_mpq, basis));
-  if (p_mpq->cache) 
+  if (p_mpq->cache)
   {
     mpq_ILLlp_cache_free (p_mpq->cache);
     mpq_clear (p_mpq->cache->val);
-    ILL_IFFREE (p_mpq->cache, mpq_ILLlp_cache); 
+    ILL_IFFREE (p_mpq->cache, mpq_ILLlp_cache);
   }
   p_mpq->qstatus = QS_LP_MODIFIED;
-  if(p_mpq->qslp->sinfo) 
+  if(p_mpq->qslp->sinfo)
   {
     mpq_ILLlp_sinfo_free(p_mpq->qslp->sinfo);
-    ILL_IFFREE(p_mpq->qslp->sinfo, mpq_ILLlp_sinfo); 
+    ILL_IFFREE(p_mpq->qslp->sinfo, mpq_ILLlp_sinfo);
   }
   if(p_mpq->qslp->rA)
   {
@@ -251,20 +251,20 @@ int QSdelta_basis_status (mpq_QSdata * p_mpq,
   if(!msg_lvl)
   {
     MESSAGE(0, "Performing Rational Basic Solve on %s, %s, check"
-        " done in %lg seconds, PS %s %lg, DS %s %lg", p_mpq->name, 
-        (*status == QS_LP_OPTIMAL) ? "RAT_optimal" : 
-        ((*status == QS_LP_INFEASIBLE) ?  "RAT_infeasible" : 
+        " done in %lg seconds, PS %s %lg, DS %s %lg", p_mpq->name,
+        (*status == QS_LP_OPTIMAL) ? "RAT_optimal" :
+        ((*status == QS_LP_INFEASIBLE) ?  "RAT_infeasible" :
          ((*status == QS_LP_UNBOUNDED) ?  "RAT_unbounded" : "RAT_unsolved")),
-        local_timer.time, p_mpq->lp->basisstat.primal_feasible ? 
-        "F":(p_mpq->lp->basisstat.primal_infeasible ? "I" : "U"), 
+        local_timer.time, p_mpq->lp->basisstat.primal_feasible ?
+        "F":(p_mpq->lp->basisstat.primal_infeasible ? "I" : "U"),
         p_mpq->lp->basisstat.primal_feasible ?
-        mpq_get_d(p_mpq->lp->objval) : 
+        mpq_get_d(p_mpq->lp->objval) :
         (p_mpq->lp->basisstat.primal_infeasible ?
-         mpq_get_d(p_mpq->lp->pinfeas) : mpq_get_d(p_mpq->lp->objbound)), 
-        p_mpq->lp->basisstat.dual_feasible ? 
-        "F":(p_mpq->lp->basisstat.dual_infeasible ? "I" : "U"), 
-        p_mpq->lp->basisstat.dual_feasible ? mpq_get_d(p_mpq->lp->dobjval) 
-        :(p_mpq->lp->basisstat.dual_infeasible ? 
+         mpq_get_d(p_mpq->lp->pinfeas) : mpq_get_d(p_mpq->lp->objbound)),
+        p_mpq->lp->basisstat.dual_feasible ?
+        "F":(p_mpq->lp->basisstat.dual_infeasible ? "I" : "U"),
+        p_mpq->lp->basisstat.dual_feasible ? mpq_get_d(p_mpq->lp->dobjval)
+        :(p_mpq->lp->basisstat.dual_infeasible ?
           mpq_get_d(p_mpq->lp->dinfeas) : mpq_get_d(p_mpq->lp->objbound)) );
   }
 CLEANUP:
@@ -342,7 +342,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     dbl_QSload_basis (p_dbl, ebasis);
   if (dbl_ILLeditor_solve (p_dbl, simplexalgo))
   {
-    MESSAGE(p_mpq->simplex_display ? 0: __QS_SB_VERB, 
+    MESSAGE(p_mpq->simplex_display ? 0: __QS_SB_VERB,
             "double approximation failed, code %d, "
             "continuing in extended precision", rval);
     goto MPF_PRECISION;
