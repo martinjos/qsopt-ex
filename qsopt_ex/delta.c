@@ -410,7 +410,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       if (mpq_QSget_infeas_array (p_mpq, y_mpq))
       {
         MESSAGE(p_mpq->simplex_display ? 0 : __QS_SB_VERB, "double approximation"
-                " failed, code %d, continuing in extended precision\n", rval);
+                " failed, code %d, continuing in extended precision", rval);
         goto MPF_PRECISION;
       }
       infeasible_output (p_mpq, y, y_mpq);
@@ -426,7 +426,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
       goto CLEANUP;
   }
-  IFMESSAGE(p_mpq->simplex_display,"Re-trying inextended precision");
+  IFMESSAGE(p_mpq->simplex_display,"Retrying in extended precision");
   /* if we reach this point, then we have to keep going, we use the previous
    * basis ONLY if the previous precision thinks that it has the optimal
    * solution, otherwise we start from scratch. */
@@ -454,7 +454,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     {
       if (p_mpq->simplex_display || DEBUG >= __QS_SB_VERB)
       {
-        QSlog("Re-using previous basis");
+        QSlog("Reusing previous basis");
       }
       if (basis)
       {
@@ -479,14 +479,14 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       }
       if (p_mpq->simplex_display || DEBUG >= __QS_SB_VERB)
       {
-        QSlog("Not-using previous basis");
+        QSlog("Not using previous basis");
       }
     }
     if (mpf_ILLeditor_solve (p_mpf, simplexalgo))
     {
       if (p_mpq->simplex_display || DEBUG >= __QS_SB_VERB)
       {
-        QSlog("mpf_%u precision falied, error code %d, continuing with "
+        QSlog("mpf_%u precision failed, error code %d, continuing with "
                     "next precision", precision, rval);
        }
       goto NEXT_PRECISION;
