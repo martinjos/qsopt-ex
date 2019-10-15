@@ -88,7 +88,8 @@ TEMPLATE_SOURCE_FILES = \
 	qsopt_ex/priority.c \
 	qsopt_ex/editor.c \
 	qsopt_ex/format.c \
-	qsopt_ex/eg_numutil.c
+	qsopt_ex/eg_numutil.c \
+	qsopt_ex/delta_g.c
 
 TEMPLATE_PUBLIC_HEADER_FILES = \
 	qsopt_ex/write_lp.h \
@@ -114,7 +115,8 @@ TEMPLATE_PUBLIC_HEADER_FILES = \
 	qsopt_ex/format.h \
 	qsopt_ex/lpdefs.h \
 	qsopt_ex/qstruct.h \
-	qsopt_ex/eg_numutil.h
+	qsopt_ex/eg_numutil.h \
+	qsopt_ex/delta_g.h
 
 TEMPLATE_PRIVATE_HEADER_FILES = \
 	qsopt_ex/rawlp.h \

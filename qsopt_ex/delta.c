@@ -28,6 +28,9 @@
 #endif
 
 #include "delta.h"
+#include "delta_g_mpq.h"
+#include "delta_g_mpf.h"
+#include "delta_g_dbl.h"
 
 #include "logging-private.h"
 
@@ -400,21 +403,16 @@ static void delta_solved_output (mpq_QSdata * p_mpq,
 	}
 }
 
-static int ensure_solutions_available (mpq_QSdata * p_mpq, int status)
+int QSexact_delta_flip_on_bad_status (int status)
 {
 	int rval = 0;
-	char save_optimal = p_mpq->lp->basisstat.optimal;
-	if (!p_mpq->lp->basisstat.optimal)
+	if (status != QS_LP_OPTIMAL
+	 && status != QS_LP_INFEASIBLE
+	 && status != QS_LP_UNBOUNDED)
 	{
-		mpq_ILLfct_compute_xbz (p_mpq->lp);
-		mpq_ILLfct_compute_piz (p_mpq->lp);
-		mpq_ILLfct_compute_dz (p_mpq->lp);
-		p_mpq->lp->basisstat.optimal = 1;  // Pretend that it is optimal
-		EGcallD(mpq_QSgrab_cache (p_mpq, status));
+		rval = 1;
 	}
-CLEANUP:
-	p_mpq->lp->basisstat.optimal = save_optimal;
-	return rval;
+	EG_RETURN (rval);
 }
 
 /* ========================================================================= */
@@ -470,12 +468,14 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 			(p_dbl->lp->final_phase != DUAL_PHASEII))
 		EGcallD(dbl_QSopt_primal (p_dbl, &status));
 	EGcallD(dbl_QSget_status (p_dbl, &status));
+	EGcallD(QSexact_delta_flip_on_bad_status (status));
 	last_status = status;
 	EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
-	/* optimization did not fail, so we must have a basis and solution values,
+	/* optimization did not fail, so we have a (factorized) basis,
 	 * which may be delta-sat */
 	x_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->ncols);
 	y_dbl = dbl_EGlpNumAllocArray (p_dbl->qslp->nrows);
+	EGcallD(dbl_QSexact_delta_force_grab_cache (p_dbl, status, 1));
 	EGcallD(dbl_QSget_x_array (p_dbl, x_dbl));
 	EGcallD(dbl_QSget_pi_array (p_dbl, y_dbl));
 	x_mpq = QScopy_array_dbl_mpq (x_dbl);
@@ -492,9 +492,9 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	}
 	MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 	EGcallD(QSexact_basis_status (p_mpq, &status, basis, msg_lvl, &simplexalgo));
-	/* exact pivoting did not fail, so we have (or can derive) solution values,
+	/* exact pivoting did not fail, so we have solution values,
 	 * which may be delta-sat */
-	EGcallD(ensure_solutions_available (p_mpq, status));
+	EGcallD(mpq_QSexact_delta_force_grab_cache (p_mpq, status, 0));
 	EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 	EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
@@ -579,14 +579,16 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 				(p_mpf->lp->final_phase != DUAL_PHASEII))
 			EGcallD(mpf_QSopt_primal (p_mpf, &status));
 		EGcallD(mpf_QSget_status (p_mpf, &status));
+		EGcallD(QSexact_delta_flip_on_bad_status (status));
 		last_status = status;
 		EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
-		/* optimization did not fail, so we must have a basis and solution values,
+		/* optimization did not fail, so we have a (factorized) basis,
 		 * which may be delta-sat */
 		basis = mpf_QSget_basis (p_mpf);
 		MESSAGE(0, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 		x_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->ncols);
 		y_mpf = mpf_EGlpNumAllocArray (p_mpf->qslp->nrows);
+		EGcallD(mpf_QSexact_delta_force_grab_cache (p_mpf, status, 1));
 		EGcallD(mpf_QSget_x_array (p_mpf, x_mpf));
 		EGcallD(mpf_QSget_pi_array (p_mpf, y_mpf));
 		x_mpq = QScopy_array_mpf_mpq (x_mpf);
@@ -601,9 +603,9 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		}
 		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
 		EGcallD(QSexact_basis_status (p_mpq, &status, basis, msg_lvl, &simplexalgo));
-		/* exact pivoting did not fail, so we have (or can derive) solution values,
+		/* exact pivoting did not fail, so we have solution values,
 		 * which may be delta-sat */
-		EGcallD(ensure_solutions_available (p_mpq, status));
+		EGcallD(mpq_QSexact_delta_force_grab_cache (p_mpq, status, 0));
 		EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 		EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
