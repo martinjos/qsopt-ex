@@ -403,18 +403,6 @@ static void delta_solved_output (mpq_QSdata * p_mpq,
 	}
 }
 
-int QSexact_delta_flip_on_bad_status (int status)
-{
-	int rval = 0;
-	if (status != QS_LP_OPTIMAL
-	 && status != QS_LP_INFEASIBLE
-	 && status != QS_LP_UNBOUNDED)
-	{
-		rval = 1;
-	}
-	EG_RETURN (rval);
-}
-
 /* ========================================================================= */
 /* Important: the input problem must be feasible and bounded.  */
 int QSexact_delta_solver (mpq_QSdata * p_mpq,
@@ -468,7 +456,6 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 			(p_dbl->lp->final_phase != DUAL_PHASEII))
 		EGcallD(dbl_QSopt_primal (p_dbl, &status));
 	EGcallD(dbl_QSget_status (p_dbl, &status));
-	EGcallD(QSexact_delta_flip_on_bad_status (status));
 	last_status = status;
 	EGcallD(dbl_QSget_itcnt(p_dbl, 0, 0, 0, 0, &last_iter));
 	/* optimization did not fail, so we have a (factorized) basis,
@@ -579,7 +566,6 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 				(p_mpf->lp->final_phase != DUAL_PHASEII))
 			EGcallD(mpf_QSopt_primal (p_mpf, &status));
 		EGcallD(mpf_QSget_status (p_mpf, &status));
-		EGcallD(QSexact_delta_flip_on_bad_status (status));
 		last_status = status;
 		EGcallD(mpf_QSget_itcnt(p_mpf, 0, 0, 0, 0, &last_iter));
 		/* optimization did not fail, so we have a (factorized) basis,
