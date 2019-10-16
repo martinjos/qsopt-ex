@@ -27,6 +27,8 @@ static unsigned k2 = 3;
 static int use_scaling = 1;
 /** @brief use dlouble floating point output */
 static int use_double = 0;
+/** @brief output feasibility LP */
+static int use_feas = 0;
 /** @brief use MPS file format */
 static int use_mps = 0;
 /** @brief file name output. */
@@ -52,6 +54,8 @@ static inline void sl_usage (char const *const s)
 	fprintf (stderr,
 					 "    -e n   number of columns for the second OA level (>=2)\n");
 	fprintf (stderr,
+					 "    -f n   if n > 0, output the feasibility problem (zero objective), otherwise, the optimality problem\n");
+	fprintf (stderr,
 					 "    -d n   if n > 0, write the LP in double precition arithmetic, otherwise, write it in rational form\n");
 	fprintf (stderr, "    -o f   filename where to write the output LP\n");
 	fprintf (stderr,
@@ -66,7 +70,7 @@ static inline int sl_parseargs (int argc,
 																char **argv)
 {
 	int c;
-	while ((c = getopt (argc, argv, "a:b:c:e:m:s:d:o:t:")) != EOF)
+	while ((c = getopt (argc, argv, "a:b:c:e:f:m:s:d:o:t:")) != EOF)
 	{
 		switch (c)
 		{
@@ -87,6 +91,9 @@ static inline int sl_parseargs (int argc,
 			break;
 		case 'd':
 			use_double = atoi (optarg);
+			break;
+		case 'f':
+			use_feas = atoi (optarg);
 			break;
 		case 'm':
 			use_mps = atoi (optarg);
@@ -120,6 +127,7 @@ static inline int sl_parseargs (int argc,
 	fprintf (stderr, "\tfirst level range = %d\n", s1);
 	fprintf (stderr, "\tsecond level range = %d\n", s2);
 	fprintf (stderr, "\tt = %d\n", t);
+	fprintf (stderr, "\toutputting %s problem\n", use_feas ? "feasibility" : "optimality");
 	fprintf (stderr, "\t%s scaling\n", use_scaling ? "using" : "not using");
 	fprintf (stderr, "\t%s output\n", use_double ? "double" : "rational");
 	fprintf (stderr, "\toutput file : %s\n", out_file);
@@ -196,7 +204,7 @@ int main (int argc,
 		{
 			snprintf (strtmp, (size_t)1023, "V_%d_%d", i, j);
 			rval =
-				mpq_QSnew_col (p_mpq, mpq_oneLpNum,
+				mpq_QSnew_col (p_mpq, use_feas ? mpq_zeroLpNum : mpq_oneLpNum,
 											 (i + j == 0) ? mpq_oneLpNum : mpq_zeroLpNum,
 											 mpq_ILL_MAXDOUBLE, strtmp);
 			CHECKRVALG (rval, CLEANUP);
