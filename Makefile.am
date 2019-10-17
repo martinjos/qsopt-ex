@@ -15,7 +15,7 @@ MAIN_SOURCE_FILES = \
 	qsopt_ex/util.c \
 	qsopt_ex/logging.c \
 	qsopt_ex/exact.c \
-	qsopt_ex/delta.c \
+	qsopt_ex/exact_delta.c \
 	qsopt_ex/reporter.c \
 	qsopt_ex/eg_exutil.c \
 	qsopt_ex/eg_macros.c \
@@ -33,7 +33,7 @@ PUBLIC_HEADER_FILES = \
 	qsopt_ex/names.h \
 	qsopt_ex/symtab.h \
 	qsopt_ex/exact.h \
-	qsopt_ex/delta.h \
+	qsopt_ex/exact_delta.h \
 	qsopt_ex/reporter.h \
 	qsopt_ex/eg_exutil.h \
 	qsopt_ex/eg_macros.h \
@@ -89,7 +89,7 @@ TEMPLATE_SOURCE_FILES = \
 	qsopt_ex/editor.c \
 	qsopt_ex/format.c \
 	qsopt_ex/eg_numutil.c \
-	qsopt_ex/delta_g.c
+	qsopt_ex/exact_delta_g.c
 
 TEMPLATE_PUBLIC_HEADER_FILES = \
 	qsopt_ex/write_lp.h \
@@ -116,7 +116,7 @@ TEMPLATE_PUBLIC_HEADER_FILES = \
 	qsopt_ex/lpdefs.h \
 	qsopt_ex/qstruct.h \
 	qsopt_ex/eg_numutil.h \
-	qsopt_ex/delta_g.h
+	qsopt_ex/exact_delta_g.h
 
 TEMPLATE_PRIVATE_HEADER_FILES = \
 	qsopt_ex/rawlp.h \

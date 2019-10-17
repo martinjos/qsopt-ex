@@ -27,10 +27,10 @@
 # include "config.h"
 #endif
 
-#include "delta.h"
-#include "delta_g_mpq.h"
-#include "delta_g_mpf.h"
-#include "delta_g_dbl.h"
+#include "exact_delta.h"
+#include "exact_delta_g_mpq.h"
+#include "exact_delta_g_mpf.h"
+#include "exact_delta_g_dbl.h"
 
 #include "logging-private.h"
 
@@ -636,5 +636,5 @@ CLEANUP:
 
 /* ========================================================================= */
 /** @} */
-/* end of delta.c */
+/* end of exact_delta.c */
 

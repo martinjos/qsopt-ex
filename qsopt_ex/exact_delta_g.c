@@ -19,24 +19,47 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * */
 /* ========================================================================= */
-#ifndef EGLPNUM_TYPENAME__DELTA_G_H__
-#define EGLPNUM_TYPENAME__DELTA_G_H__
-
-#include "qstruct_EGLPNUM_TYPENAME.h"
-
 /** @file
  * @ingroup Esolver */
 /** @addtogroup Esolver */
 /** @{ */
-/* ========================================================================= */
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-/* ========================================================================= */
+#include "exact_delta_g_EGLPNUM_TYPENAME.h"
+
+#include "logging-private.h"
+
+#include "except.h"
+
+#include "lpdata_EGLPNUM_TYPENAME.h"
+#include "fct_EGLPNUM_TYPENAME.h"
+
 int EGLPNUM_TYPENAME_QSexact_delta_force_grab_cache (EGLPNUM_TYPENAME_QSdata *p,
 																										 int status,
-																										 int compute_pII_vals);
+																										 int compute_pII_vals)
+{
+	int rval = 0;
+	char save_optimal = p->lp->basisstat.optimal;
+	if (status != QS_LP_OPTIMAL)
+	{
+		if (compute_pII_vals)
+		{
+			// Only if not already done by QSexact_basis_status
+			EGLPNUM_TYPENAME_ILLfct_compute_xbz (p->lp);
+			EGLPNUM_TYPENAME_ILLfct_compute_piz (p->lp);
+			EGLPNUM_TYPENAME_ILLfct_compute_dz (p->lp);
+		}
+		p->lp->basisstat.optimal = 1;  // Pretend that it is optimal
+		EGcallD(EGLPNUM_TYPENAME_QSgrab_cache (p, status));
+	}
+CLEANUP:
+	p->lp->basisstat.optimal = save_optimal;
+	EG_RETURN (rval);
+}
 
-/** @} */
 /* ========================================================================= */
-/* end of delta_g.h */
-#endif
+/** @} */
+/* end of exact_delta_g.c */
 
