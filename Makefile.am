@@ -181,7 +181,13 @@ TEMPLATE_FILES = \
 	$(TEMPLATE_SOURCES_MPF) $(TEMPLATE_HEADERS_MPF)
 
 # Tell automake that these are generated files
-BUILT_SOURCES = $(TEMPLATE_FILES)
+BUILT_SOURCES = $(TEMPLATE_FILES) build.h
+
+# This must be regenerated on every build
+.PHONY: .FORCE
+.FORCE:
+build.h: .FORCE
+	echo "#define BUILD_REPOSITORY_STATUS \"`git describe --dirty`\"" > $@
 
 
 AM_CFLAGS = -I$(top_srcdir)/qsopt_ex -I$(top_builddir)/qsopt_ex
@@ -193,7 +199,7 @@ libqsopt_ex_la_SOURCES = \
 	$(MAIN_SOURCE_FILES) $(PUBLIC_HEADER_FILES) \
 	$(PRIVATE_HEADER_FILES)
 nodist_libqsopt_ex_la_SOURCES = \
-	$(TEMPLATE_FILES)
+	$(TEMPLATE_FILES) build.h
 libqsopt_ex_la_CFLAGS = \
 	$(AM_CFLAGS) $(GMP_CFLAGS)
 libqsopt_ex_la_LDFLAGS = \
@@ -244,4 +250,5 @@ EXTRA_DIST = \
 
 # Clean files
 CLEANFILES = \
-	$(TEMPLATE_FILES)
+	$(TEMPLATE_FILES) \
+	build.h

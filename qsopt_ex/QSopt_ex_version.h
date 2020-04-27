@@ -23,4 +23,6 @@
 
 void QSopt_ex_version(void);
 
+const char* QSopt_ex_repository_status(void);
+
 #endif /* !QSOPT_EX_VERSION_H */

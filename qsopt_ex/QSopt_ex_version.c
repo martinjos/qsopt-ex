@@ -22,6 +22,8 @@
 # include "config.h"
 #endif
 
+#include "build.h"
+
 #include <stdio.h>
 
 #include "logging-private.h"
@@ -30,4 +32,9 @@ void
 QSopt_ex_version(void)
 {
 	QSlog("Using %s %s", PACKAGE_NAME, PACKAGE_VERSION);
+}
+
+const char* QSopt_ex_repository_status(void)
+{
+	return BUILD_REPOSITORY_STATUS;
 }
