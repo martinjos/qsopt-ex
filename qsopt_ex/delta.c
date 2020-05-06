@@ -403,6 +403,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
   if (QS_LP_OPTIMAL == *status || QS_LP_UNBOUNDED == *status || QS_LP_INFEASIBLE == *status)
   {
     basis = dbl_QSget_basis (p_dbl);
+    MESSAGE (msg_lvl, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
     EGcallD(QSdelta_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
     if (QS_LP_INFEASIBLE == *status)
     {
@@ -503,6 +504,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     if (QS_LP_OPTIMAL == *status || QS_LP_UNBOUNDED == *status || QS_LP_INFEASIBLE == *status)
     {
       basis = mpf_QSget_basis (p_mpf);
+      MESSAGE (msg_lvl, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
       EGcallD(QSdelta_basis_status (p_mpq, status, basis, msg_lvl, &simplexalgo));
       if (QS_LP_INFEASIBLE == *status)
       {
