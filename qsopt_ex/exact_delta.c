@@ -70,6 +70,23 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	mpq_init (d_obj);
 	mpq_set_ui (d_obj, 0UL, 1UL);
 
+	if(!msg_lvl)
+	{
+		unsigned sz;
+		QSlog("QSexact_delta_optimal_test: p_sol =");
+		sz = __EGlpNumArraySize (p_sol);
+		for (int i = 0; i < sz; ++i)
+		{
+			QSlog("%d: %g", i, mpq_get_d (p_sol[i]));
+		}
+		QSlog("QSexact_delta_optimal_test: d_sol =");
+		sz = __EGlpNumArraySize (d_sol);
+		for (int i = 0; i < sz; ++i)
+		{
+			QSlog("%d: %g", i, mpq_get_d (d_sol[i]));
+		}
+	}
+
 	/* now check if the given basis is the optimal basis */
 	if (mpq_QSload_basis (p, basis))
 	{
@@ -173,6 +190,15 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		mpq_mul (num1, qslp->rhs[i], d_sol[i]);
 		mpq_add (d_obj, d_obj, num1);
 		mpq_sub (num2, qslp->rhs[i], rhs_copy[i]);  /* num2 = b_i - A_i.x */
+		/* clamp to "infinities" */
+		if (mpq_cmp (num2, mpq_INFTY) > 0)
+		{
+			mpq_set(num2, mpq_INFTY);
+		}
+		else if (mpq_cmp (num2, mpq_NINFTY) < 0)
+		{
+			mpq_set(num2, mpq_NINFTY);
+		}
 		EXIT (qslp->A.matcnt[rowmap[i]] != 1, "Imposible!");
 		/* divide by its own coefficient to get value of row slack */
 		mpq_div (num2, num2,
@@ -210,6 +236,13 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 							QS_EXACT_DELTA_SAT==rval ? "delta-" : "");
 		}
 		goto CLEANUP;
+	}
+	else
+	{
+		if(!msg_lvl)
+		{
+			MESSAGE(0, "Failed to prove problem delta-satisfiable");
+		}
 	}
 
 	/* We have now determined that nothing can be learnt from the primal
@@ -338,6 +371,11 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	}
 	else
 	{
+		if(!msg_lvl)
+		{
+			MESSAGE(0, "Failed to prove problem unsatisfiable or delta-satisfiable (dual objective = %g)",
+			        mpq_get_d (d_obj));
+		}
 		rval = QS_EXACT_UNKNOWN;
 	}
 
