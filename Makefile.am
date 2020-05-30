@@ -14,6 +14,7 @@ MAIN_SOURCE_FILES = \
 	qsopt_ex/symtab.c \
 	qsopt_ex/util.c \
 	qsopt_ex/logging.c \
+	qsopt_ex/dump.c \
 	qsopt_ex/exact.c \
 	qsopt_ex/exact_delta.c \
 	qsopt_ex/delta.c \
@@ -52,7 +53,8 @@ PUBLIC_HEADER_FILES = \
 	qsopt_ex/sortrus_common.h \
 	qsopt_ex/QSopt_ex_version.h \
 	qsopt_ex/QSopt_ex.h \
-	qsopt_ex/logging.h
+	qsopt_ex/logging.h \
+	qsopt_ex/dump.h
 
 PRIVATE_HEADER_FILES = \
 	qsopt_ex/allocrus.h \

@@ -23,6 +23,7 @@
 #include "qsopt_mpf.h"
 #include "qsopt_dbl.h"
 #include "simplex_mpq.h"
+#include "dump.h"
 
 /* ========================================================================= */
 /** @brief Used as separator while printing output to the screen (controlled by
@@ -215,6 +216,11 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
   if (x && (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status))
     EGcallD(copy_x (x, p_mpq));
 
+  if (QS_LP_FEASIBLE != *status && QS_LP_DELTA_FEASIBLE != *status)
+  {
+    IFMESSAGE(p_mpq->simplex_display, "Failed to derive useful information from solver result");
+  }
+
 CLEANUP:
 
   mpq_EGlpNumClearVar (infeas);
@@ -276,6 +282,27 @@ int QSdelta_basis_status (mpq_QSdata * p_mpq,
   p_mpq->lp->pIdz = mpq_EGlpNumAllocArray (p_mpq->lp->nnbasic);
   mpq_ILLfct_compute_phaseI_piz (p_mpq->lp);
   mpq_ILLfct_compute_phaseI_dz (p_mpq->lp);
+
+  if (p_mpq->simplex_display >= 2)
+  {
+    unsigned sz;
+    if (p_mpq->simplex_display >= 3)
+    {
+      mpq_QSdump_prob(p_mpq);
+      mpq_QSdump_basis(p_mpq);
+    }
+    QSlog("QSdelta_basis_status: xnbz =");
+    mpq_QSdump_xnbz(p_mpq);
+    QSlog("QSdelta_basis_status: xbz =");
+    mpq_QSdump_xbz(p_mpq);
+    QSlog("QSdelta_basis_status: bfeas =");
+    mpq_QSdump_bfeas(p_mpq);
+    QSlog("QSdelta_basis_status: pIpiz =");
+    mpq_QSdump_array(p_mpq->lp->pIpiz, "pIpiz");
+    QSlog("QSdelta_basis_status: pIdz =");
+    mpq_QSdump_array(p_mpq->lp->pIdz, "pIdz");
+  }
+
   mpq_ILLfct_check_pIdfeasible (p_mpq->lp, &fi, zero);
   mpq_ILLfct_set_status_values (p_mpq->lp, fi.pstatus, fi.dstatus,
                                            PHASEII,    PHASEI);
@@ -381,7 +408,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     QSlog("Trying double precision");
   }
   p_dbl = QScopy_prob_mpq_dbl (p_mpq, "dbl_problem");
-  if(__QS_SB_VERB <= DEBUG) p_dbl->simplex_display = 1;
+  if(__QS_SB_VERB <= DEBUG && !p_dbl->simplex_display) p_dbl->simplex_display = 1;
   if (ebasis && ebasis->nstruct)
     dbl_QSload_basis (p_dbl, ebasis);
   if (dbl_ILLeditor_solve (p_dbl, simplexalgo))
@@ -427,6 +454,10 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
       goto CLEANUP;
   }
+  else
+  {
+    MESSAGE (msg_lvl, "Floating-point solver reports failure; trying next precision");
+  }
   IFMESSAGE(p_mpq->simplex_display,"Retrying in extended precision");
   /* if we reach this point, then we have to keep going, we use the previous
    * basis ONLY if the previous precision thinks that it has the optimal
@@ -448,7 +479,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     {
       EGcallD(mpf_QSwrite_prob(p_mpf, "qsxprob.mpf.lp","LP"));
     }
-    if(__QS_SB_VERB <= DEBUG) p_mpf->simplex_display = 1;
+    if(__QS_SB_VERB <= DEBUG && !p_mpf->simplex_display) p_mpf->simplex_display = 1;
     simplexalgo = PRIMAL_SIMPLEX;
     if(!last_iter) last_status = QS_LP_UNSOLVED;
     if(last_status == QS_LP_OPTIMAL || last_status == QS_LP_INFEASIBLE)
@@ -523,6 +554,10 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       EGcallD(check_delta_feas (p_mpq, delta, status, x));
       if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
         goto CLEANUP;
+    }
+    else
+    {
+      MESSAGE (msg_lvl, "Floating-point solver reports failure; trying next precision");
     }
   NEXT_PRECISION:
     mpf_QSfree_prob (p_mpf);

@@ -33,6 +33,7 @@
 #include "exact_delta_g_dbl.h"
 
 #include "logging-private.h"
+#include "dump.h"
 
 #include "except.h"
 
@@ -70,21 +71,17 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	mpq_init (d_obj);
 	mpq_set_ui (d_obj, 0UL, 1UL);
 
-	if(!msg_lvl)
+	if (p->simplex_display >= 2)
 	{
 		unsigned sz;
+		if (p->simplex_display >= 3)
+		{
+			mpq_QSdump_prob(p);
+		}
 		QSlog("QSexact_delta_optimal_test: p_sol =");
-		sz = __EGlpNumArraySize (p_sol);
-		for (int i = 0; i < sz; ++i)
-		{
-			QSlog("%d: %g", i, mpq_get_d (p_sol[i]));
-		}
+		mpq_QSdump_array(p_sol, "p_sol");
 		QSlog("QSexact_delta_optimal_test: d_sol =");
-		sz = __EGlpNumArraySize (d_sol);
-		for (int i = 0; i < sz; ++i)
-		{
-			QSlog("%d: %g", i, mpq_get_d (d_sol[i]));
-		}
+		mpq_QSdump_array(d_sol, "d_sol");
 	}
 
 	/* now check if the given basis is the optimal basis */
@@ -478,7 +475,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		QSlog("Trying double precision");
 	}
 	p_dbl = QScopy_prob_mpq_dbl (p_mpq, "dbl_problem");
-	if(__QS_SB_VERB <= DEBUG) p_dbl->simplex_display = 1;
+	if(__QS_SB_VERB <= DEBUG && !p_dbl->simplex_display) p_dbl->simplex_display = 1;
 	if (ebasis && ebasis->nstruct)
 		dbl_QSload_basis (p_dbl, ebasis);
 	if (dbl_ILLeditor_solve (p_dbl, simplexalgo))
@@ -554,7 +551,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		{
 			EGcallD(mpf_QSwrite_prob(p_mpf, "qsxprob.mpf.lp","LP"));
 		}
-		if(__QS_SB_VERB <= DEBUG) p_mpf->simplex_display = 1;
+		if(__QS_SB_VERB <= DEBUG && !p_mpf->simplex_display) p_mpf->simplex_display = 1;
 		simplexalgo = PRIMAL_SIMPLEX;
 		if(!last_iter) last_status = QS_LP_UNSOLVED;
 		if(last_status == QS_LP_OPTIMAL || last_status == QS_LP_INFEASIBLE)
