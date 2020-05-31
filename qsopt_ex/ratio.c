@@ -1006,13 +1006,6 @@ void EGLPNUM_TYPENAME_ILLratio_longdII_test (
 		b_indx = indx;
 	}
 
-	if (bnd_exist != 0 && EGLPNUM_TYPENAME_EGlpNumIsLeq (EGLPNUM_TYPENAME_INFTY, t_max))
-	{
-		rs->ratio_stat = RATIO_UNBOUNDED;
-		/* QSlog("rcost: %.8f", rcost); */
-		ILL_CLEANUP;
-	}
-
 	EGLPNUM_TYPENAME_EGlpNumZero (z_max);
 	EGLPNUM_TYPENAME_EGlpNumZero (az_max);
 	indx = -1;
