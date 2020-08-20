@@ -229,7 +229,17 @@ typedef struct itcnt_t
 #define QS_LP_NUMERR            8
 #define QS_LP_OBJ_LIMIT         9
 #define QS_LP_FEASIBLE         11
+
+// Originally in qsopt.h
+#define QS_LP_PRIMAL_FEASIBLE   11
+#define QS_LP_PRIMAL_INFEASIBLE 12
+#define QS_LP_PRIMAL_UNBOUNDED  13
+#define QS_LP_DUAL_FEASIBLE     14
+#define QS_LP_DUAL_INFEASIBLE   15
+#define QS_LP_DUAL_UNBOUNDED    16
+
 #define QS_LP_DELTA_FEASIBLE   17
+#define QS_LP_DELTA_OPTIMAL    18
 #define QS_LP_MODIFIED        100
 #define QS_LP_CHANGE_PREC			1024
 #endif

@@ -112,6 +112,7 @@
 #include "delta.h"
 #include "eg_exutil.h"
 #include "exact_delta.h"
+#include "delta_full.h"
 #include "dump.h"
 
 #endif /* !QSOPT_EX_H */
