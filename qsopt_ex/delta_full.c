@@ -438,6 +438,7 @@ static int judge_basis (int *judgement,
       {
         // Optimal
         optimal_output (p_mpq);
+        *status = QS_LP_OPTIMAL;
         *judgement = 1;
         goto CLEANUP;
       }
@@ -445,6 +446,7 @@ static int judge_basis (int *judgement,
       {
         // Delta-optimal
         delta_optimal_output (p_mpq);
+        *status = QS_LP_DELTA_OPTIMAL;
         *judgement = 1;
         goto CLEANUP;
       }
@@ -514,6 +516,8 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
   }
   int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
   *status = QS_LP_UNSOLVED;
+  mpq_set_si(obj_lo, 0, 1);  // Result is exact unless otherwise specified
+  mpq_set_si(obj_up, 0, 1);
   /* save the problem if we are really debugging */
   if(DEBUG >= __QS_SB_VERB)
   {
