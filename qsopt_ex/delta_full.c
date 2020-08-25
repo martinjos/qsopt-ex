@@ -506,6 +506,8 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
   mpq_t *obj_coefs = 0,
         *rhs_coefs = 0;
   mpq_t zero;
+
+  *status = QS_LP_UNSOLVED;
   mpq_EGlpNumInitVar (zero);  // Inits to zero
 
   if (!p_mpq || !p_mpq->qslp)
@@ -515,7 +517,6 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
     goto CLEANUP;
   }
   int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
-  *status = QS_LP_UNSOLVED;
   mpq_set_si(obj_lo, 0, 1);  // Result is exact unless otherwise specified
   mpq_set_si(obj_up, 0, 1);
   /* save the problem if we are really debugging */
@@ -560,6 +561,8 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
     EGcallD (judge_basis (&judgement, 1, p_mpq, status, basis, msg_lvl, &simplexalgo,
                           delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
                           &have_primal, &have_dual));
+    MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",
+            judgement, *status);
     if (judgement == 2)
     {
       MESSAGE(p_mpq->simplex_display ? 0 : __QS_SB_VERB, "double approximation"
@@ -567,7 +570,10 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
       goto MPF_PRECISION;
     }
     else if (judgement)
+    {
+      MESSAGE(msg_lvl, "Basis judgement made, quitting");
       goto CLEANUP;
+    }
   }
   else
   {
@@ -654,8 +660,12 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
       EGcallD (judge_basis (&judgement, 0, p_mpq, status, basis, msg_lvl, &simplexalgo,
                             delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
                             &have_primal, &have_dual));
-      if (judgement)
+      MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",
+              judgement, *status);
+      if (judgement) {
+        MESSAGE(msg_lvl, "Basis judgement made, quitting");
         goto CLEANUP;
+      }
     }
     else
     {
@@ -665,6 +675,9 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
     mpf_QSfree_prob (p_mpf);
     p_mpf = 0;
   }
+
+  MESSAGE(msg_lvl, "Iteration limit reached");
+  *status = QS_LP_ITER_LIMIT;
 
 CLEANUP:
   dbl_EGlpNumFreeArray (x_dbl);
