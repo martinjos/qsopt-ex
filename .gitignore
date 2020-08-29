@@ -44,6 +44,10 @@
 /ESolver_Doxygen_Tags
 /doc/
 
+# Build directory
+
+/build/
+
 # http://www.gnu.org/software/automake
 
 .deps
