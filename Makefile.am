@@ -14,17 +14,17 @@ MAIN_SOURCE_FILES = \
 	qsopt_ex/symtab.c \
 	qsopt_ex/util.c \
 	qsopt_ex/logging.c \
-	qsopt_ex/dump.c \
-	qsopt_ex/exact.c \
-	qsopt_ex/exact_delta.c \
-	qsopt_ex/delta.c \
-	qsopt_ex/delta_full.c \
 	qsopt_ex/reporter.c \
 	qsopt_ex/eg_exutil.c \
 	qsopt_ex/eg_macros.c \
 	qsopt_ex/eg_memslab.c \
 	qsopt_ex/sortrus_common.c \
-	qsopt_ex/QSopt_ex_version.c
+	qsopt_ex/QSopt_ex_version.c \
+	exact/exact.c \
+	exact/exact_delta.c \
+	exact/delta.c \
+	exact/delta_full.c \
+	exact/dump.c
 
 # Header files
 PUBLIC_HEADER_FILES = \
@@ -35,10 +35,6 @@ PUBLIC_HEADER_FILES = \
 	qsopt_ex/zeit.h \
 	qsopt_ex/names.h \
 	qsopt_ex/symtab.h \
-	qsopt_ex/exact.h \
-	qsopt_ex/exact_delta.h \
-	qsopt_ex/delta.h \
-	qsopt_ex/delta_full.h \
 	qsopt_ex/reporter.h \
 	qsopt_ex/eg_exutil.h \
 	qsopt_ex/eg_macros.h \
@@ -56,7 +52,11 @@ PUBLIC_HEADER_FILES = \
 	qsopt_ex/QSopt_ex_version.h \
 	qsopt_ex/QSopt_ex.h \
 	qsopt_ex/logging.h \
-	qsopt_ex/dump.h
+	exact/exact.h \
+	exact/exact_delta.h \
+	exact/delta.h \
+	exact/delta_full.h \
+	exact/dump.h
 
 PRIVATE_HEADER_FILES = \
 	qsopt_ex/allocrus.h \
@@ -95,7 +95,7 @@ TEMPLATE_SOURCE_FILES = \
 	qsopt_ex/editor.c \
 	qsopt_ex/format.c \
 	qsopt_ex/eg_numutil.c \
-	qsopt_ex/exact_delta_g.c
+	exact/exact_delta_g.c
 
 TEMPLATE_PUBLIC_HEADER_FILES = \
 	qsopt_ex/write_lp.h \
@@ -122,7 +122,7 @@ TEMPLATE_PUBLIC_HEADER_FILES = \
 	qsopt_ex/lpdefs.h \
 	qsopt_ex/qstruct.h \
 	qsopt_ex/eg_numutil.h \
-	qsopt_ex/exact_delta_g.h
+	exact/exact_delta_g.h
 
 TEMPLATE_PRIVATE_HEADER_FILES = \
 	qsopt_ex/rawlp.h \
@@ -194,7 +194,7 @@ build.h: .FORCE
 	echo "#define BUILD_REPOSITORY_STATUS \"`git describe --dirty`\"" > $@
 
 
-AM_CFLAGS = -I$(top_srcdir)/qsopt_ex -I$(top_builddir)/qsopt_ex
+AM_CFLAGS = -I$(top_srcdir)/qsopt_ex -I$(top_builddir)/qsopt_ex -I$(top_srcdir)/exact -I$(top_builddir)/exact
 AM_LDFLAGS = -Wl,--enable-new-dtags
 
 # Library files
