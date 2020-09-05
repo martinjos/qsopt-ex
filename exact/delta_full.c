@@ -8,6 +8,7 @@
 #endif
 
 #include "delta_full.h"
+#include "delta.h"
 
 #include "qstruct_dbl.h"
 #include "qstruct_mpf.h"
@@ -26,13 +27,6 @@
 #include "qsopt_mpq.h"
 #include "simplex_mpq.h"
 #include "dump.h"
-
-/* ========================================================================= */
-/** @brief Used as separator while printing output to the screen (controlled by
- * enabling simplex_display in the mpq_QSdata */
-/* ========================================================================= */
-static const char __sp[81] =
-  "================================================================================";
 
 // Source size is known, because it was allocated using __EGlpNumAllocArray.
 // Target size is not known - this must be part of the function contract.
@@ -110,59 +104,6 @@ static void delta_optimal_output (mpq_QSdata * p_mpq)
 }
 
 /* ========================================================================= */
-/** @brief copy the primal solution out of p_mpq.
- * @param x where to store the feasible primal solution.
- * @param p_mpq the problem data.
- * */
-/* ========================================================================= */
-static int copy_x (mpq_t * const x,
-                   const mpq_QSdata * p_mpq)
-{
-  int rval = 0;
-  int i, col;
-  mpq_t *tempx = 0;
-  mpq_lpinfo* lp = p_mpq->lp;
-  mpq_ILLlpdata* qslp = p_mpq->qslp;
-
-  // Populate x with values of structural variables
-  if (lp->nrows != qslp->nrows ||
-      lp->ncols != qslp->ncols ||
-      lp->nnbasic != qslp->nstruct ||
-      lp->ncols != lp->nrows + lp->nnbasic)
-  {
-    QSlog("Unexpected condition: lp and qslp dimensions do not match");
-    rval = 1;
-    ILL_CLEANUP;
-  }
-  tempx = mpq_EGlpNumAllocArray (lp->ncols);
-  // Set basic variables
-  for (i = 0; i < lp->nrows; i++)
-    mpq_EGlpNumCopy (tempx[lp->baz[i]], lp->xbz[i]);
-  // Set non-basic variables
-  for (i = 0; i < lp->nnbasic; i++)
-  {
-    col = lp->nbaz[i];
-    if (lp->vstat[col] == STAT_UPPER)
-      mpq_EGlpNumCopy (tempx[col], lp->uz[col]);
-    else if (lp->vstat[col] == STAT_LOWER)
-      mpq_EGlpNumCopy (tempx[col], lp->lz[col]);
-    else
-      mpq_EGlpNumZero (tempx[col]);
-  }
-  // Get structural variables
-  for (i = 0; i < qslp->nstruct; i++)
-  {
-    mpq_EGlpNumCopy (x[i], tempx[qslp->structmap[i]]);
-  }
-
-CLEANUP:
-
-  mpq_EGlpNumFreeArray (tempx);
-
-  EG_RETURN (rval);
-}
-
-/* ========================================================================= */
 /** @brief copy the dual solution out of p_mpq.
  * @param y where to store the feasible dual solution.
  * @param p_mpq the problem data.
@@ -183,27 +124,6 @@ static int copy_y (mpq_t * const y,
   {
     mpq_EGlpNumCopy (y[i], lp->piz[i]);
   }
-
-CLEANUP:
-
-  EG_RETURN (rval);
-}
-
-/* ========================================================================= */
-/** @brief print into screen (if enable) a message indicating that we have
- * successfully prove feasibility.
- * @param p_mpq the problem data.
- * */
-/* ========================================================================= */
-static int feasible_output (mpq_QSdata * p_mpq,
-                            mpq_t * const x)
-{
-  int rval = 0;
-
-  if (p_mpq->simplex_display)
-    QSlog("Problem is feasible");
-  if (x)
-    EGcallD(copy_x (x, p_mpq));
 
 CLEANUP:
 
@@ -412,7 +332,7 @@ static int judge_basis (int *judgement,
     if (QS_LP_OPTIMAL == *status || QS_LP_PRIMAL_FEASIBLE == *status)
     {
       *have_primal = 1;
-      EGcallD (copy_x (x, p_mpq));
+      EGcallD (QSdelta_copy_x (x, p_mpq));
       my_inner_prod (p_mpq->qslp->objsense == QS_MIN ? obj_up : obj_lo,
                             obj_coefs, x, p_mpq->qslp->nstruct);
     }

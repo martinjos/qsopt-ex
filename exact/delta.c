@@ -26,13 +26,6 @@
 #include "dump.h"
 
 /* ========================================================================= */
-/** @brief Used as separator while printing output to the screen (controlled by
- * enabling simplex_display in the mpq_QSdata */
-/* ========================================================================= */
-static const char __sp[81] =
-  "================================================================================";
-
-/* ========================================================================= */
 /** @brief print into screen (if enable) a message indicating that we have
  * successfully prove infeasibility, and save (if y is non
  * NULL ) the dual ray solution provided in y_mpq.
@@ -57,14 +50,7 @@ static void infeasible_output (mpq_QSdata * p_mpq,
   }
 }
 
-/* ========================================================================= */
-/** @brief copy the primal solution out of p_mpq.
- * @param x where to store the feasible primal solution.
- * @param p_mpq the problem data.
- * */
-/* ========================================================================= */
-static int copy_x (mpq_t * const x,
-                   const mpq_QSdata * p_mpq)
+int QSdelta_copy_x (mpq_t * const x, const mpq_QSdata * p_mpq)
 {
   int rval = 0;
   int i, col;
@@ -124,7 +110,7 @@ static int feasible_output (mpq_QSdata * p_mpq,
   if (p_mpq->simplex_display)
     QSlog("Problem is feasible");
   if (x)
-    EGcallD(copy_x (x, p_mpq));
+    EGcallD(QSdelta_copy_x (x, p_mpq));
 
 CLEANUP:
 
@@ -214,7 +200,7 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
   }
 
   if (x && (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status))
-    EGcallD(copy_x (x, p_mpq));
+    EGcallD(QSdelta_copy_x (x, p_mpq));
 
   if (QS_LP_FEASIBLE != *status && QS_LP_DELTA_FEASIBLE != *status)
   {

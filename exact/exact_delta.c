@@ -388,13 +388,6 @@ CLEANUP:
 }
 
 /* ========================================================================= */
-/** @brief Used as separator while printing output to the screen (controled by
- * enabling simplex_display in the mpq_QSdata */
-/* ========================================================================= */
-static const char __sp[81] =
-	"================================================================================";
-
-/* ========================================================================= */
 /** @brief print onto screen (if enable) a message indicating that we have
  * successfully solved the delta-satisfiability problem, and save (if x and y
  * are non NULL respectivelly) the optimal primal/dual solution provided in

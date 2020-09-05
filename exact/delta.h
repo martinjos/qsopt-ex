@@ -39,4 +39,12 @@ int QSdelta_solver (mpq_QSdata * p_orig,
 
 /** @} */
 
+/* ========================================================================= */
+/** @brief copy the primal solution out of p_mpq.
+ * @param x where to store the feasible primal solution.
+ * @param p_mpq the problem data.
+ * */
+/* ========================================================================= */
+int QSdelta_copy_x (mpq_t * const x, const mpq_QSdata * p_mpq);
+
 #endif
