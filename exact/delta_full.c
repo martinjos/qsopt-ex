@@ -29,6 +29,8 @@
 #include "simplex_mpq.h"
 #include "dump.h"
 
+#include <assert.h>
+
 // Source size is known, because it was allocated using __EGlpNumAllocArray.
 // Target size is not known - this must be part of the function contract.
 void copy_array (mpq_t * const target,
@@ -117,7 +119,7 @@ static int copy_y (mpq_t * const y,
   int i, col;
   mpq_lpinfo* lp = p_mpq->lp;
 
-  // QSdelta_full_basis_status() has already been called, so we have the basis,
+  // QSexact_basis_status() has already been called, so we have the basis,
   // which is all that is needed.
   lp->piz = mpq_EGlpNumAllocArray (lp->nrows);
   mpq_ILLfct_compute_piz (lp);
@@ -149,7 +151,6 @@ static int judge_basis (int *judgement,
                         int *status,
                         QSbasis * const basis,
                         const int msg_lvl,
-                        int *const simplexalgo,
                         const mpq_t delta,
                         mpq_t * const x,
                         mpq_t * const y,
@@ -168,7 +169,7 @@ static int judge_basis (int *judgement,
   *judgement = 0;
 
   MESSAGE (msg_lvl, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
-  EGcallD(QSdelta_full_basis_status (p_mpq, status, basis, msg_lvl, simplexalgo));
+  EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, NULL));
   if (QS_LP_INFEASIBLE == *status)
   {
     y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
@@ -197,15 +198,17 @@ static int judge_basis (int *judgement,
   else
   {
     // FIXME: the new bound might not be *better*
-    if (QS_LP_OPTIMAL == *status || QS_LP_PRIMAL_FEASIBLE == *status)
+    if (QS_LP_OPTIMAL == *status || p_mpq->lp->probstat.primal_feasible)
     {
+      assert (p_mpq->lp->basisstat.primal_feasible);
       *have_primal = 1;
       EGcallD (QSdelta_copy_x (x, p_mpq));
       my_inner_prod (p_mpq->qslp->objsense == QS_MIN ? obj_up : obj_lo,
                             obj_coefs, x, p_mpq->qslp->nstruct);
     }
-    if (QS_LP_OPTIMAL == *status || QS_LP_DUAL_FEASIBLE == *status)
+    if (QS_LP_OPTIMAL == *status || p_mpq->lp->probstat.dual_feasible)
     {
+      assert (p_mpq->lp->basisstat.dual_feasible);
       *have_dual = 1;
       EGcallD (copy_y (y, p_mpq));
       my_inner_prod (p_mpq->qslp->objsense == QS_MIN ? obj_lo : obj_up,
@@ -346,7 +349,7 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
   {
     basis = dbl_QSget_basis (p_dbl);
     int judgement = 0;
-    EGcallD (judge_basis (&judgement, 1, p_mpq, status, basis, msg_lvl, &simplexalgo,
+    EGcallD (judge_basis (&judgement, 1, p_mpq, status, basis, msg_lvl,
                           delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
                           &have_primal, &have_dual));
     MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",
@@ -445,7 +448,7 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
     {
       basis = mpf_QSget_basis (p_mpf);
       int judgement = 0;
-      EGcallD (judge_basis (&judgement, 0, p_mpq, status, basis, msg_lvl, &simplexalgo,
+      EGcallD (judge_basis (&judgement, 0, p_mpq, status, basis, msg_lvl,
                             delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
                             &have_primal, &have_dual));
       MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",

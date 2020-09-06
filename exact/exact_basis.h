@@ -56,7 +56,7 @@
  * @param basis       basis to be tested.
  * @param msg_lvl     message level.
  * @param simplexalgo may be updated with PRIMAL_SIMPLEX to indicate that
- *                    subsequent solves should try primal.
+ *                    subsequent solves should try primal (if non-NULL).
  */
 int QSexact_basis_status (mpq_QSdata * p_mpq,
                           int *status,
@@ -73,30 +73,13 @@ int QSexact_basis_status (mpq_QSdata * p_mpq,
  * @param basis       basis to be tested.
  * @param msg_lvl     message level.
  * @param simplexalgo may be updated with PRIMAL_SIMPLEX to indicate that
- *                    subsequent solves should try primal.
+ *                    subsequent solves should try primal (if non-NULL).
  * */
 int QSdelta_basis_status (mpq_QSdata * p_mpq,
                           int *status,
                           QSbasis * const basis,
                           const int msg_lvl,
                           int *const simplexalgo);
-
-/* ========================================================================= */
-/** @brief get the status for a given basis in rational arithmetic, it should
- * also leave everything set to get primal/dual solutions when needed.
- * @param p_mpq       the problem data.
- * @param status      where to store status of basis (optimal, infeasible,
- *                    unbounded, or unsolved).
- * @param basis       basis to be tested.
- * @param msg_lvl     message level.
- * @param simplexalgo may be updated with PRIMAL_SIMPLEX to indicate that
- *                    subsequent solves should try primal.
- * */
-int QSdelta_full_basis_status (mpq_QSdata * p_mpq,
-                               int *status,
-                               QSbasis * const basis,
-                               const int msg_lvl,
-                               int *const simplexalgo);
 
 /** @} */
 /* ========================================================================= */
