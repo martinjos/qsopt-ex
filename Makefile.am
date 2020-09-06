@@ -21,6 +21,7 @@ MAIN_SOURCE_FILES = \
 	qsopt_ex/sortrus_common.c \
 	qsopt_ex/QSopt_ex_version.c \
 	exact/exact.c \
+	exact/exact_basis.c \
 	exact/exact_delta.c \
 	exact/delta.c \
 	exact/delta_full.c \
@@ -53,6 +54,7 @@ PUBLIC_HEADER_FILES = \
 	qsopt_ex/QSopt_ex.h \
 	qsopt_ex/logging.h \
 	exact/exact.h \
+	exact/exact_basis.h \
 	exact/exact_delta.h \
 	exact/delta.h \
 	exact/delta_full.h \

@@ -31,6 +31,7 @@
 #include "exact_delta_g_mpq.h"
 #include "exact_delta_g_mpf.h"
 #include "exact_delta_g_dbl.h"
+#include "exact_basis.h"
 
 #include "logging-private.h"
 #include "dump.h"

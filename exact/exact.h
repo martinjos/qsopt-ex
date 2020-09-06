@@ -260,23 +260,6 @@ void QSexact_write_row (EGioFile_t * out_f,
 #endif
 
 /* ========================================================================= */
-/** @brief get the status for a given basis in rational arithmetic, it should
- * also leave everything set to get primal/dual solutions when needed.
- * @param p_mpq       the problem data.
- * @param status      where to store status of basis (optimal, infeasible,
- *                    unbounded, or unsolved).
- * @param basis       basis to be tested.
- * @param msg_lvl     message level.
- * @param simplexalgo may be updated with PRIMAL_SIMPLEX to indicate that
- *                    subsequent solves should try primal.
- */
-int QSexact_basis_status (mpq_QSdata * p_mpq,
-													int *status,
-													QSbasis * const basis,
-													const int msg_lvl,
-													int *const simplexalgo);
-
-/* ========================================================================= */
 /** @brief test whether given basis is primal and dual feasible in rational arithmetic. 
  * @param p_mpq   the problem data.
  * @param basis   basis to be tested.
