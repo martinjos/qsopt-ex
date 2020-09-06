@@ -47,23 +47,11 @@
 #include "lpdata_mpq.h"
 #include "simplex_mpq.h"
 
-/* ========================================================================= */
-/** @brief get the status for a given basis in rational arithmetic, it should
- * also leave everything set to get primal/dual solutions when needed.
- * */
-int QSexact_basis_status (mpq_QSdata * p_mpq,
-                          int *status,
-                          QSbasis * const basis,
-                          const int msg_lvl,
-                          int *const simplexalgo)
+static int load_and_factor_basis (mpq_QSdata * p_mpq,
+                                  QSbasis * const basis,
+                                  int *singular)
 {
-  int rval = 0,
-  singular;
-  mpq_feas_info fi;
-  EGtimer_t local_timer;
-  mpq_EGlpNumInitVar (fi.totinfeas);
-  EGtimerReset (&local_timer);
-  EGtimerStart (&local_timer);
+  int rval = 0;
   EGcallD(mpq_QSload_basis (p_mpq, basis));
   if (p_mpq->cache)
   {
@@ -87,8 +75,31 @@ int QSexact_basis_status (mpq_QSdata * p_mpq,
   EGcallD(mpq_build_internal_lpinfo (p_mpq->lp));
   mpq_ILLfct_set_variable_type (p_mpq->lp);
   EGcallD(mpq_ILLbasis_load (p_mpq->lp, p_mpq->basis));
-  EGcallD(mpq_ILLbasis_factor (p_mpq->lp, &singular));
-  memset (&(p_mpq->lp->basisstat), 0, sizeof (mpq_lp_status_info));
+  EGcallD(mpq_ILLbasis_factor (p_mpq->lp, singular));  // Always sets *singular
+CLEANUP:
+  return rval;
+}
+
+/* ========================================================================= */
+/** @brief get the status for a given basis in rational arithmetic, it should
+ * also leave everything set to get primal/dual solutions when needed.
+ * */
+int QSexact_basis_status (mpq_QSdata * p_mpq,
+                          int *status,
+                          QSbasis * const basis,
+                          const int msg_lvl,
+                          int *const simplexalgo)
+{
+  int rval = 0,
+      singular;
+  mpq_feas_info fi;
+  EGtimer_t local_timer;
+  mpq_EGlpNumInitVar (fi.totinfeas);
+  EGtimerReset (&local_timer);
+  EGtimerStart (&local_timer);
+
+  EGcallD(load_and_factor_basis (p_mpq, basis, &singular));
+
   mpq_ILLfct_compute_piz (p_mpq->lp);
   mpq_ILLfct_compute_dz (p_mpq->lp);
   mpq_ILLfct_compute_xbz (p_mpq->lp);
@@ -120,20 +131,23 @@ int QSexact_basis_status (mpq_QSdata * p_mpq,
   {
     MESSAGE(0, "Performing Rational Basic Solve on %s, %s, check"
         " done in %lg seconds, PS %s %lg, DS %s %lg", p_mpq->name,
-        (*status == QS_LP_OPTIMAL) ? "RAT_optimal" :
-        ((*status == QS_LP_INFEASIBLE) ?  "RAT_infeasible" :
-         ((*status == QS_LP_UNBOUNDED) ?  "RAT_unbounded" : "RAT_unsolved")),
-        local_timer.time, p_mpq->lp->basisstat.primal_feasible ?
-        "F":(p_mpq->lp->basisstat.primal_infeasible ? "I" : "U"),
-        p_mpq->lp->basisstat.primal_feasible ?
-        mpq_get_d(p_mpq->lp->objval) :
-        (p_mpq->lp->basisstat.primal_infeasible ?
-         mpq_get_d(p_mpq->lp->pinfeas) : mpq_get_d(p_mpq->lp->objbound)),
-        p_mpq->lp->basisstat.dual_feasible ?
-        "F":(p_mpq->lp->basisstat.dual_infeasible ? "I" : "U"),
-        p_mpq->lp->basisstat.dual_feasible ? mpq_get_d(p_mpq->lp->dobjval)
-        :(p_mpq->lp->basisstat.dual_infeasible ?
-          mpq_get_d(p_mpq->lp->dinfeas) : mpq_get_d(p_mpq->lp->objbound)) );
+          *status == QS_LP_OPTIMAL    ? "RAT_optimal"
+        : *status == QS_LP_INFEASIBLE ? "RAT_infeasible"
+        : *status == QS_LP_UNBOUNDED  ? "RAT_unbounded"
+                                      : "RAT_unsolved",
+        local_timer.time,
+          p_mpq->lp->basisstat.primal_feasible   ? "F"
+        : p_mpq->lp->basisstat.primal_infeasible ? "I"
+                                                 : "U",
+          p_mpq->lp->basisstat.primal_feasible   ? mpq_get_d(p_mpq->lp->objval)
+        : p_mpq->lp->basisstat.primal_infeasible ? mpq_get_d(p_mpq->lp->pinfeas)
+                                                 : mpq_get_d(p_mpq->lp->objbound),
+          p_mpq->lp->basisstat.dual_feasible   ? "F"
+        : p_mpq->lp->basisstat.dual_infeasible ? "I"
+                                               : "U",
+          p_mpq->lp->basisstat.dual_feasible   ? mpq_get_d(p_mpq->lp->dobjval)
+        : p_mpq->lp->basisstat.dual_infeasible ? mpq_get_d(p_mpq->lp->dinfeas)
+                                               : mpq_get_d(p_mpq->lp->objbound));
   }
 CLEANUP:
   mpq_EGlpNumClearVar (fi.totinfeas);
@@ -151,7 +165,7 @@ int QSdelta_basis_status (mpq_QSdata * p_mpq,
                           int *const simplexalgo)
 {
   int rval = 0,
-  singular;
+      singular;
   mpq_feas_info fi;
   EGtimer_t local_timer;
   mpq_t zero;
@@ -159,32 +173,9 @@ int QSdelta_basis_status (mpq_QSdata * p_mpq,
   mpq_EGlpNumInitVar (fi.totinfeas);
   EGtimerReset (&local_timer);
   EGtimerStart (&local_timer);
-  EGcallD(mpq_QSload_basis (p_mpq, basis));
-  if (p_mpq->cache)
-  {
-    mpq_ILLlp_cache_free (p_mpq->cache);
-    mpq_clear (p_mpq->cache->val);
-    ILL_IFFREE (p_mpq->cache, mpq_ILLlp_cache);
-  }
-  p_mpq->qstatus = QS_LP_MODIFIED;
-  if(p_mpq->qslp->sinfo)
-  {
-    mpq_ILLlp_sinfo_free(p_mpq->qslp->sinfo);
-    ILL_IFFREE(p_mpq->qslp->sinfo, mpq_ILLlp_sinfo);
-  }
-  if(p_mpq->qslp->rA)
-  {
-    mpq_ILLlp_rows_clear (p_mpq->qslp->rA);
-    ILL_IFFREE (p_mpq->qslp->rA, mpq_ILLlp_rows);
-  }
-  mpq_free_internal_lpinfo (p_mpq->lp);
-  mpq_init_internal_lpinfo (p_mpq->lp);
-  EGcallD(mpq_build_internal_lpinfo (p_mpq->lp));
-  mpq_ILLfct_set_variable_type (p_mpq->lp);
-  EGcallD(mpq_ILLbasis_load (p_mpq->lp, p_mpq->basis));
-  EGcallD(mpq_ILLbasis_factor (p_mpq->lp, &singular));
-  memset (&(p_mpq->lp->probstat), 0, sizeof (mpq_lp_status_info));
-  memset (&(p_mpq->lp->basisstat), 0, sizeof (mpq_lp_status_info));
+
+  EGcallD(load_and_factor_basis (p_mpq, basis, &singular));
+
   mpq_ILLfct_compute_xbz (p_mpq->lp);
   mpq_ILLfct_check_pfeasible (p_mpq->lp, &fi, mpq_zeroLpNum);
   p_mpq->lp->final_phase = PRIMAL_PHASEI;  // For mpq_QSget_infeas_array
@@ -213,7 +204,7 @@ int QSdelta_basis_status (mpq_QSdata * p_mpq,
     mpq_QSdump_array(p_mpq->lp->pIdz, "pIdz");
   }
 
-  mpq_ILLfct_check_pIdfeasible (p_mpq->lp, &fi, zero);
+  mpq_ILLfct_check_pIdfeasible (p_mpq->lp, &fi, zero);  // Requires zero to be non-const
   mpq_ILLfct_set_status_values (p_mpq->lp, fi.pstatus, fi.dstatus,
                                            PHASEII,    PHASEI);
   if (p_mpq->lp->probstat.primal_feasible
@@ -251,6 +242,7 @@ int QSdelta_basis_status (mpq_QSdata * p_mpq,
   }
 CLEANUP:
   mpq_EGlpNumClearVar (fi.totinfeas);
+  mpq_EGlpNumClearVar (zero);
   return rval;
 }
 
