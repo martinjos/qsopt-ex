@@ -491,7 +491,6 @@ CLEANUP:
   mpq_QSfree_basis (basis);
   dbl_QSfree_prob (p_dbl);
   mpf_QSfree_prob (p_mpf);
-  mpq_QSfree_prob (p_mpq);
 
   EG_RETURN (rval);
 }
