@@ -22,6 +22,8 @@
 #include "qstruct_mpq.h"
 
 void mpq_QSdump_xbz (const mpq_QSdata *p_mpq);
+void mpq_QSdump_piz (const mpq_QSdata *p_mpq);
+void mpq_QSdump_bz (const mpq_QSdata *p_mpq);
 void mpq_QSdump_xnbz (const mpq_QSdata *p_mpq);
 void mpq_QSdump_bfeas (const mpq_QSdata *p_mpq);
 void mpq_QSdump_array (const mpq_t *array, const char* tag);

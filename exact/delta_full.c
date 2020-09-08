@@ -120,9 +120,7 @@ static int copy_y (mpq_t * const y,
   mpq_lpinfo* lp = p_mpq->lp;
 
   // QSexact_basis_status() has already been called, so we have the basis,
-  // which is all that is needed.
-  lp->piz = mpq_EGlpNumAllocArray (lp->nrows);
-  mpq_ILLfct_compute_piz (lp);
+  // and the y value (piz).
   for (i = 0; i < lp->nrows; i++)
   {
     mpq_EGlpNumCopy (y[i], lp->piz[i]);
@@ -197,23 +195,51 @@ static int judge_basis (int *judgement,
   }
   else
   {
-    // FIXME: the new bound might not be *better*
     if (QS_LP_OPTIMAL == *status || p_mpq->lp->probstat.primal_feasible)
     {
       assert (p_mpq->lp->basisstat.primal_feasible);
-      *have_primal = 1;
       EGcallD (QSdelta_copy_x (x, p_mpq));
-      my_inner_prod (p_mpq->qslp->objsense == QS_MIN ? obj_up : obj_lo,
-                            obj_coefs, x, p_mpq->qslp->nstruct);
+      mpq_t primal_obj;
+      mpq_init (primal_obj);
+      my_inner_prod (primal_obj, obj_coefs, x, p_mpq->qslp->nstruct);
+      if (!*have_primal ||
+          (p_mpq->qslp->objsense == QS_MIN ? mpq_cmp (primal_obj, obj_up) < 0
+                                           : mpq_cmp (primal_obj, obj_lo) > 0))
+      {
+        mpq_set (p_mpq->qslp->objsense == QS_MIN ? obj_up : obj_lo,
+                 primal_obj);
+        MESSAGE (msg_lvl, "Primal feasible: set %s to %lf",
+                 p_mpq->qslp->objsense == QS_MIN ? "obj_up" : "obj_lo",
+                 mpq_get_d (primal_obj));
+      }
+      mpq_clear (primal_obj);
+      *have_primal = 1;
     }
     if (QS_LP_OPTIMAL == *status || p_mpq->lp->probstat.dual_feasible)
     {
       assert (p_mpq->lp->basisstat.dual_feasible);
-      *have_dual = 1;
       EGcallD (copy_y (y, p_mpq));
-      my_inner_prod (p_mpq->qslp->objsense == QS_MIN ? obj_lo : obj_up,
-                            rhs_coefs, y, p_mpq->qslp->nrows);
+      mpq_t dual_obj;
+      mpq_init (dual_obj);
+      my_inner_prod (dual_obj, rhs_coefs, y, p_mpq->qslp->nrows);
+      if (!*have_dual ||
+          (p_mpq->qslp->objsense == QS_MIN ? mpq_cmp (dual_obj, obj_lo) > 0
+                                           : mpq_cmp (dual_obj, obj_up) < 0))
+      {
+        mpq_set (p_mpq->qslp->objsense == QS_MIN ? obj_lo : obj_up,
+                 dual_obj);
+        MESSAGE (msg_lvl, "Dual feasible: set %s to %lf",
+                 p_mpq->qslp->objsense == QS_MIN ? "obj_lo" : "obj_up",
+                 mpq_get_d (dual_obj));
+        QSlog ("bz:");
+        mpq_QSdump_bz (p_mpq);
+        QSlog ("piz:");
+        mpq_QSdump_piz (p_mpq);
+      }
+      mpq_clear (dual_obj);
+      *have_dual = 1;
     }
+#if 0
     if (QS_LP_OPTIMAL == *status)
     {
       // Shortcut: can avoid difference check
@@ -221,10 +247,12 @@ static int judge_basis (int *judgement,
       *judgement = 1;
       goto CLEANUP;
     }
+#endif
     if (*have_primal && *have_dual)
     {
       // Could be optimal or delta-optimal
       mpq_sub (diff, obj_up, obj_lo);
+      assert (mpq_sgn (diff) >= 0);
       if (mpq_sgn (diff) == 0)
       {
         // Optimal
@@ -308,8 +336,8 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
     goto CLEANUP;
   }
   int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
-  mpq_set_si(obj_lo, 0, 1);  // Result is exact unless otherwise specified
-  mpq_set_si(obj_up, 0, 1);
+  mpq_set_si(obj_lo, 0, 1);  // Result is exact unless returning actual
+  mpq_set_si(obj_up, 0, 1);  // objective function value
   /* save the problem if we are really debugging */
   if(DEBUG >= __QS_SB_VERB)
   {

@@ -37,6 +37,36 @@ void mpq_QSdump_xbz (const mpq_QSdata *p_mpq)
   }
 }
 
+void mpq_QSdump_piz (const mpq_QSdata *p_mpq)
+{
+  if (!p_mpq->lp->piz)
+  {
+    QSlog ("piz is unset");
+    return;
+  }
+  assert (__EGlpNumArraySize (p_mpq->lp->piz) == p_mpq->lp->nrows);
+  for (int i = 0; i < p_mpq->lp->nrows; ++i)
+  {
+    if (mpq_sgn (p_mpq->lp->piz[i]) != 0)
+      QSlog ("%d: %g", i, mpq_get_d (p_mpq->lp->piz[i]));
+  }
+}
+
+void mpq_QSdump_bz (const mpq_QSdata *p_mpq)
+{
+  if (!p_mpq->lp->bz)
+  {
+    QSlog ("bz is unset");
+    return;
+  }
+  assert (__EGlpNumArraySize (p_mpq->lp->bz) >= p_mpq->lp->nrows);
+  for (int i = 0; i < p_mpq->lp->nrows; ++i)
+  {
+    if (mpq_sgn (p_mpq->lp->bz[i]) != 0)
+      QSlog ("%d: %g", i, mpq_get_d (p_mpq->lp->bz[i]));
+  }
+}
+
 void mpq_QSdump_xnbz (const mpq_QSdata *p_mpq)
 {
   //if (!p_mpq->lp->nbaz || !p_mpq->lp->vstat || !p_mpq->qslp->lower || !p_mpq->qslp->upper)
