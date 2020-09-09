@@ -47,6 +47,7 @@ AS_IF([test "x$enable_debug" != xno], [
 ], [
   AC_SUBST([ENABLE_DEBUG],[0])
 	AC_DEFINE([DEBUG], [0], [Disable debug mode])
+	AC_DEFINE([NDEBUG], [1], [Enable no-debug mode])
 ])
 
 ### Check for verbosity level

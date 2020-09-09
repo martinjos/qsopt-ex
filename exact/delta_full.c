@@ -202,6 +202,16 @@ static int judge_basis (int *judgement,
       mpq_t primal_obj;
       mpq_init (primal_obj);
       my_inner_prod (primal_obj, obj_coefs, x, p_mpq->qslp->nstruct);
+#ifndef NDEBUG
+      mpq_ILLfct_compute_pobj (p_mpq->lp);
+      if (mpq_cmp (p_mpq->lp->pobjval, primal_obj) != 0)
+      {
+        MESSAGE (msg_lvl, "Oops: p_mpq->lp->pobjval = %lf but primal_obj = %lf",
+                 mpq_get_d (p_mpq->lp->pobjval),
+                 mpq_get_d (primal_obj));
+      }
+      assert (mpq_cmp (p_mpq->lp->pobjval, primal_obj) == 0);
+#endif
       if (!*have_primal ||
           (p_mpq->qslp->objsense == QS_MIN ? mpq_cmp (primal_obj, obj_up) < 0
                                            : mpq_cmp (primal_obj, obj_lo) > 0))
@@ -219,24 +229,22 @@ static int judge_basis (int *judgement,
     {
       assert (p_mpq->lp->basisstat.dual_feasible);
       EGcallD (copy_y (y, p_mpq));
-      mpq_t dual_obj;
-      mpq_init (dual_obj);
-      my_inner_prod (dual_obj, rhs_coefs, y, p_mpq->qslp->nrows);
+      mpq_ILLfct_compute_dobj (p_mpq->lp);
       if (!*have_dual ||
-          (p_mpq->qslp->objsense == QS_MIN ? mpq_cmp (dual_obj, obj_lo) > 0
-                                           : mpq_cmp (dual_obj, obj_up) < 0))
+          (p_mpq->qslp->objsense == QS_MIN
+            ? mpq_cmp (p_mpq->lp->dobjval, obj_lo) > 0
+            : mpq_cmp (p_mpq->lp->dobjval, obj_up) < 0))
       {
         mpq_set (p_mpq->qslp->objsense == QS_MIN ? obj_lo : obj_up,
-                 dual_obj);
+                 p_mpq->lp->dobjval);
         MESSAGE (msg_lvl, "Dual feasible: set %s to %lf",
                  p_mpq->qslp->objsense == QS_MIN ? "obj_lo" : "obj_up",
-                 mpq_get_d (dual_obj));
+                 mpq_get_d (p_mpq->lp->dobjval));
         QSlog ("bz:");
         mpq_QSdump_bz (p_mpq);
         QSlog ("piz:");
         mpq_QSdump_piz (p_mpq);
       }
-      mpq_clear (dual_obj);
       *have_dual = 1;
     }
 #if 0
