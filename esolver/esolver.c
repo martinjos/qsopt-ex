@@ -35,11 +35,19 @@
 #include "logging-private.h"
 #include "qs_config.h"
 
+enum {
+	ALGO_OPT = 0,
+	ALGO_DELTA_OPT,
+	ALGO_DELTA_FEAS_PHASE_1,
+	ALGO_DELTA_FEAS_PHASE_2,
+};
+
 /* ========================================================================= */
 /** @name static parameters for the main program */
 /*@{*/
 static char *fname = 0;
 static int lpfile = 0;
+static int algo = ALGO_OPT;
 static int usescaling = 1;
 static int showversion = 0;
 static int simplexalgo = PRIMAL_SIMPLEX;
@@ -54,12 +62,19 @@ static char *writebasis = 0;
 static double max_rtime = INT_MAX;
 /** @brief maximum memory usage */
 static unsigned long memlimit = UINT_MAX;
+static mpq_t delta;
 /*@}*/
 /* ========================================================================= */
 /** @brief Display options to the screen */
 static void usage (char *s)
 {
 	fprintf (stderr, "Usage: %s [- below -] prob_file\n", s);
+	fprintf (stderr, "   -a o,do,dfp1,dfp2  select algorithm\n");
+	fprintf (stderr, "       o = optimality [default]\n");
+	fprintf (stderr, "       do = delta-optimality\n");
+	fprintf (stderr, "       dfp1 = delta-feasibility, phase 1\n");
+	fprintf (stderr, "       dfp2 = delta-feasibility, phase 2\n");
+	fprintf (stderr, "   -D #  delta to use for delta-complete algorithms (default: 0)\n");
 	fprintf (stderr, "   -b f  write basis to file f\n");
 	fprintf (stderr, "   -B f  read initial basis from file f\n");
 #if 0
@@ -182,11 +197,33 @@ static int parseargs (int ac,
 	int boptind = 1;
 	char *boptarg = 0;
 
-	while ((c =
-					ILLutil_bix_getopt (ac, av, "b:B:d:EILm:O:p:P:R:Sv", &boptind,
-															&boptarg)) != EOF)
+	while ((c = ILLutil_bix_getopt (ac, av, "a:b:B:d:D:EILm:O:p:P:R:Sv",
+																	&boptind, &boptarg)) != EOF)
 		switch (c)
 		{
+		case 'a':
+			if (!strcmp("o", boptarg)) {
+				algo = ALGO_OPT;
+			} else if (!strcmp("do", boptarg)) {
+				algo = ALGO_DELTA_OPT;
+			} else if (!strcmp("dfp1", boptarg)) {
+				algo = ALGO_DELTA_FEAS_PHASE_1;
+			} else if (!strcmp("dfp2", boptarg)) {
+				algo = ALGO_DELTA_FEAS_PHASE_2;
+			} else {
+				usage (av[0]);
+				return 1;
+			}
+			break;
+		case 'D': {
+			int nchar = mpq_EGlpNumReadStrXc (delta, boptarg);
+			if (nchar != strlen(boptarg)) {
+				fprintf (stderr, "Failed to parse number: %s\n\n", boptarg);
+				usage (av[0]);
+				return 1;
+			}
+			break;
+		}
 		case 'm':
 			memlimit = strtoul(boptarg,0,10);
 			break;
@@ -263,8 +300,13 @@ int main (int ac,
 	int ftype = 0;								/* 0 mps, 1 lp */
 	mpq_t *y_mpq = 0,
 	 *x_mpq = 0;
+	mpq_t obj_lo;
+	mpq_t obj_up;
 	QSopt_ex_version();
 	QSexactStart();
+	mpq_init(delta);  // init to 0
+	mpq_init(obj_lo);
+	mpq_init(obj_up);
 	/* parse arguments and initialize EGlpNum related things */
 	rval = parseargs (ac, av);
 	QSexact_set_precision (precision);
@@ -345,7 +387,34 @@ int main (int ac,
 	}
 	ILLutil_init_timer (&timer_solve, "SOLVER");
 	ILLutil_start_timer (&timer_solve);
-	rval = QSexact_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status);
+	switch (algo)
+	{
+	case ALGO_OPT:
+		rval = QSexact_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status);
+		break;
+	case ALGO_DELTA_OPT:
+		rval = QSdelta_full_solver (p_mpq, delta, x_mpq, y_mpq, obj_lo, obj_up, basis, simplexalgo, &status);
+		mpq_sub (delta, obj_up, obj_lo);
+		break;
+	case ALGO_DELTA_FEAS_PHASE_1:
+		rval = QSdelta_solver (p_mpq, delta, x_mpq, y_mpq, basis, simplexalgo, &status);
+		break;
+	case ALGO_DELTA_FEAS_PHASE_2:
+		rval = QSexact_delta_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status, delta);
+		switch (status)
+		{
+		case QS_EXACT_SAT:
+			status = QS_LP_FEASIBLE;
+			break;
+		case QS_EXACT_UNSAT:
+			status = QS_LP_INFEASIBLE;
+			break;
+		case QS_EXACT_DELTA_SAT:
+			status = QS_LP_DELTA_FEASIBLE;
+			break;
+		}
+		break;
+	}
 	ILL_CLEANUP_IF (rval);
 	ILLutil_stop_timer (&timer_solve, 1);
 	if (printsol)
@@ -358,6 +427,21 @@ int main (int ac,
 		{
 		case QS_LP_OPTIMAL:
 			EGioPrintf (out_f, "status = OPTIMAL\n");
+			rval = QSexact_print_sol (p_mpq, out_f);
+			CHECKRVALG(rval,CLEANUP);
+			break;
+		case QS_LP_DELTA_OPTIMAL:
+			EGioPrintf (out_f, "status = delta-OPTIMAL with delta = %g\n", delta);
+			rval = QSexact_print_sol (p_mpq, out_f);
+			CHECKRVALG(rval,CLEANUP);
+			break;
+		case QS_LP_FEASIBLE:
+			EGioPrintf (out_f, "status = FEASIBLE\n");
+			rval = QSexact_print_sol (p_mpq, out_f);
+			CHECKRVALG(rval,CLEANUP);
+			break;
+		case QS_LP_DELTA_FEASIBLE:
+			EGioPrintf (out_f, "status = delta-FEASIBLE with delta = %g\n", delta);
 			rval = QSexact_print_sol (p_mpq, out_f);
 			CHECKRVALG(rval,CLEANUP);
 			break;
@@ -386,6 +470,9 @@ CLEANUP:
 	}
 	mpq_QSfree_basis (basis);
 	mpq_QSfree_prob (p_mpq);
+	mpq_clear(obj_up);
+	mpq_clear(obj_lo);
+	mpq_clear(delta);
 	QSexactClear();
 	return rval;									/* main return */
 }

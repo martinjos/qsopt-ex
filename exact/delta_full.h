@@ -15,15 +15,13 @@
  * @param p_mpq problem for which to determine delta-optimality exactly.
  * @param delta the delta to use for determining delta-optimality; the maximum
  * distance to optimality.
- * @param x if not null, we store here a primal feasible solution to the problem
- * (if primal feasibility established).
- * @param y if not null, we store here a dual feasible solution to the problem
- * (if dual feasibility established), or a certificate of infeasibility for the
- * problem (if infeasibility established).
- * @param obj_lo if not null, we store here a lower bound on the objective
- * (if established).
- * @param obj_up if not null, we store here an upper bound on the objective
- * (if established).
+ * @param x we store here a primal feasible solution to the problem (if primal
+ * feasibility established).
+ * @param y we store here a dual feasible solution to the problem (if dual
+ * feasibility established), or a certificate of infeasibility for the problem
+ * (if infeasibility established).
+ * @param obj_lo we store here a lower bound on the objective (if established).
+ * @param obj_up we store here an upper bound on the objective (if established).
  * @param ebasis if not null, use the given basis to start the iteration of
  * simplex, and store here the final basis (where applicable).
  * @param simplexalgo whether to use primal or dual simplex while solving the
