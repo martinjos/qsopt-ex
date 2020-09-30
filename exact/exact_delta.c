@@ -61,7 +61,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	mpq_t *dz = 0;
 	int objsense = (qslp->objsense == QS_MIN) ? 1 : -1;
 	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0 : 100000 * (1 - p->simplex_display);
-	int rval = QS_EXACT_UNKNOWN;  /* safe fallback value */
+	int rval = QS_LP_UNSOLVED;  /* safe fallback value */
 	mpq_t num1,
 	  num2,
 	  num3,
@@ -88,7 +88,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	/* now check if the given basis is the optimal basis */
 	if (mpq_QSload_basis (p, basis))
 	{
-		rval = QS_EXACT_UNKNOWN;
+		rval = QS_LP_UNSOLVED;
 		MESSAGE (msg_lvl, "QSload_basis failed");
 		goto CLEANUP;
 	}
@@ -97,7 +97,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* check that the upper and lower bound define a non-empty space */
 		if (mpq_cmp (qslp->lower[structmap[i]], qslp->upper[structmap[i]]) > 0)
 		{
-			rval = QS_EXACT_UNSAT;
+			rval = QS_LP_INFEASIBLE;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "variable %s has empty feasible range [%lg,%lg]",
@@ -113,7 +113,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			mpq_set_ui(p_sol[i], 0UL, 1UL);
 			if (0 != mpq_sgn(qslp->lower[structmap[i]]))
 			{
-				rval = QS_EXACT_UNKNOWN;
+				rval = QS_LP_UNSOLVED;
 				MESSAGE(0, "ERROR IN INPUT: variable %s has non-zero objective"
 				           " coefficient, and its lower bound is not zero",
 								 qslp->colnames[i]);
@@ -138,7 +138,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 				mpq_set (p_sol[i], qslp->lower[structmap[i]]);
 				break;
 			default:
-				rval = QS_EXACT_UNKNOWN;
+				rval = QS_LP_UNSOLVED;
 				MESSAGE (msg_lvl, "Unknown Variable basic status %d, for variable "
 								 "(%s,%d)", basis->cstat[i], qslp->colnames[i], i);
 				goto CLEANUP;
@@ -151,7 +151,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* check that the upper and lower bound define a non-empty space */
 		if (mpq_cmp (qslp->lower[rowmap[i]], qslp->upper[rowmap[i]]) > 0)
 		{
-			rval = QS_EXACT_UNSAT;
+			rval = QS_LP_INFEASIBLE;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "constraint %s logical has empty feasible range "
@@ -180,7 +180,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		}
 	}
 
-	rval = QS_EXACT_SAT;  /* provisionally SAT */
+	rval = QS_LP_FEASIBLE;  /* provisionally SAT */
 
 	/* now replace the row slack, and check for delta-sat/sat */
 	for (i = qslp->nrows; i--;)
@@ -204,34 +204,34 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		/* always replace row slacks, even if non-basic */
 		mpq_set (p_sol[qslp->nstruct + i], num2);
 		/* now we check the bounds on the logical variables */
-		if (QS_EXACT_UNKNOWN != rval)
+		if (QS_LP_UNSOLVED != rval)
 		{
 			if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
 			{
 				mpq_add(num2, num2, delta);
 				if (mpq_cmp (num2, qslp->lower[rowmap[i]]) < 0)
-					rval = QS_EXACT_UNKNOWN;  /* may be unsat */
+					rval = QS_LP_UNSOLVED;  /* may be unsat */
 				else
-					rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
+					rval = QS_LP_DELTA_FEASIBLE;  /* provisionally delta-sat */
 			}
 			else if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
 			{
 				mpq_sub(num2, num2, delta);
 				if (mpq_cmp (num2, qslp->upper[rowmap[i]]) > 0)
-					rval = QS_EXACT_UNKNOWN;  /* may be unsat */
+					rval = QS_LP_UNSOLVED;  /* may be unsat */
 				else
-					rval = QS_EXACT_DELTA_SAT;  /* provisionally delta-sat */
+					rval = QS_LP_DELTA_FEASIBLE;  /* provisionally delta-sat */
 			}
 		}
 	}
 
-	if (QS_EXACT_SAT == rval || QS_EXACT_DELTA_SAT == rval)
+	if (QS_LP_FEASIBLE == rval || QS_LP_DELTA_FEASIBLE == rval)
 	{
 		/* we already have proof */
 		if(!msg_lvl)
 		{
 			MESSAGE(0, "Problem is proven %ssatisfiable",
-							QS_EXACT_DELTA_SAT==rval ? "delta-" : "");
+							QS_LP_DELTA_FEASIBLE==rval ? "delta-" : "");
 		}
 		goto CLEANUP;
 	}
@@ -282,7 +282,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		if (dual_sense > 0 && mpq_equal(qslp->lower[col], mpq_NINFTY))
 		{
 			/* dual infeasible */
-			rval = QS_EXACT_UNKNOWN;
+			rval = QS_LP_UNSOLVED;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "solution is dual infeasible for variable %s"
@@ -293,7 +293,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		else if (dual_sense < 0 && mpq_equal(qslp->upper[col], mpq_INFTY))
 		{
 			/* dual infeasible */
-			rval = QS_EXACT_UNKNOWN;
+			rval = QS_LP_UNSOLVED;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "solution is dual infeasible for variable %s"
@@ -335,7 +335,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		if (dual_sense > 0 && mpq_equal(qslp->lower[col], mpq_NINFTY))
 		{
 			/* dual infeasible */
-			rval = QS_EXACT_UNKNOWN;
+			rval = QS_LP_UNSOLVED;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "solution is dual infeasible for logical variable %s"
@@ -346,7 +346,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 		else if (dual_sense < 0 && mpq_equal(qslp->upper[col], mpq_INFTY))
 		{
 			/* dual infeasible */
-			rval = QS_EXACT_UNKNOWN;
+			rval = QS_LP_UNSOLVED;
 			if(!msg_lvl)
 			{
 				MESSAGE(0, "solution is dual infeasible for logical variable %s"
@@ -365,7 +365,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			MESSAGE(0, "Problem is proven unsatisfiable (dual objective = %g)",
 			        mpq_get_d (d_obj));
 		}
-		rval = QS_EXACT_UNSAT;
+		rval = QS_LP_INFEASIBLE;
 	}
 	else
 	{
@@ -374,7 +374,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 			MESSAGE(0, "Failed to prove problem unsatisfiable or delta-satisfiable (dual objective = %g)",
 			        mpq_get_d (d_obj));
 		}
-		rval = QS_EXACT_UNKNOWN;
+		rval = QS_LP_UNSOLVED;
 	}
 
 	/* ending */
@@ -413,9 +413,9 @@ static void delta_solved_output (mpq_QSdata * p_mpq,
 	{
 		QSlog("delta-satisfiability problem solved exactly (result = %s)"
 		      " with delta = %lg",
-					sat_status == QS_EXACT_SAT ? "sat"
-				: sat_status == QS_EXACT_UNSAT ? "unsat"
-				: sat_status == QS_EXACT_DELTA_SAT ? "delta-sat" : "unknown",
+					sat_status == QS_LP_FEASIBLE ? "sat"
+				: sat_status == QS_LP_INFEASIBLE ? "unsat"
+				: sat_status == QS_LP_DELTA_FEASIBLE ? "delta-sat" : "unknown",
 				  mpq_get_d(delta));
 	}
 	if (y)
@@ -434,7 +434,7 @@ static void delta_solved_output (mpq_QSdata * p_mpq,
 
 /* ========================================================================= */
 /* Important: the input problem must be feasible and bounded.  */
-int QSexact_delta_solver (mpq_QSdata * p_mpq,
+int QSexact_delta_solver (mpq_QSdata * p_orig,
 													mpq_t * const x,
 													mpq_t * const y,
 													QSbasis * const ebasis,
@@ -450,14 +450,18 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	  it = QS_EXACT_MAX_ITER;
 	dbl_QSdata *p_dbl = 0;
 	mpf_QSdata *p_mpf = 0;
+	mpq_QSdata *p_mpq = 0;
 	double *x_dbl = 0,
 	 *y_dbl = 0;
 	mpq_t *x_mpq = 0,
 	 *y_mpq = 0;
 	mpf_t *x_mpf = 0,
 	 *y_mpf = 0;
-	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_mpq->simplex_display) * 10000;
-	*sat_status = QS_EXACT_UNKNOWN;
+	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_orig->simplex_display) * 10000;
+	*sat_status = QS_LP_UNSOLVED;
+	p_mpq = mpq_QScopy_prob (p_orig, "mpq_soi_problem");
+	/* set the objective function to the sum of infeasibilites (in the copy) */
+	EGcallD (QSexact_delta_create_soi_obj (p_mpq));
 	/* save the problem if we are really debugging */
 	if(DEBUG >= __QS_SB_VERB)
 	{
@@ -501,7 +505,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	basis = dbl_QSget_basis (p_dbl);
 	MESSAGE (msg_lvl, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
-	if (QS_EXACT_UNKNOWN != *sat_status)
+	if (QS_LP_UNSOLVED != *sat_status)
 	{
 		delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 		goto CLEANUP;
@@ -514,7 +518,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 	EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 	EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
-	if (QS_EXACT_UNKNOWN != *sat_status)
+	if (QS_LP_UNSOLVED != *sat_status)
 	{
 		delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 		goto CLEANUP;
@@ -611,7 +615,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		mpf_EGlpNumFreeArray (x_mpf);
 		mpf_EGlpNumFreeArray (y_mpf);
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
-		if (QS_EXACT_UNKNOWN != *sat_status)
+		if (QS_LP_UNSOLVED != *sat_status)
 		{
 			delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 			goto CLEANUP;
@@ -624,7 +628,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 		EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 		EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
-		if (QS_EXACT_UNKNOWN != *sat_status)
+		if (QS_LP_UNSOLVED != *sat_status)
 		{
 			delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
 			goto CLEANUP;
@@ -660,6 +664,7 @@ CLEANUP:
 	mpq_QSfree_basis (basis);
 	dbl_QSfree_prob (p_dbl);
 	mpf_QSfree_prob (p_mpf);
+	mpq_QSfree_prob (p_mpq);
 	return rval;
 }
 

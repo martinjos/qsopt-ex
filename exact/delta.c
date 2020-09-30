@@ -259,17 +259,11 @@ int QSdelta_solver (mpq_QSdata * p_orig,
   mpq_t *y_mpq = 0;
   mpf_t *x_mpf = 0,
    *y_mpf = 0;
-  mpq_t zero;
-  mpq_EGlpNumInitVar (zero);  // Inits to zero
   int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_orig->simplex_display) * 10000;
   *status = QS_LP_UNSOLVED;
   p_mpq = mpq_QScopy_prob (p_orig, "mpq_feas_problem");
   /* set the objective function to zero (in the copy) */
-  for (int i = 0; i < p_mpq->qslp->nstruct; i++)
-  {
-    // coef (third arg) should be const, but isn't, so can't use mpq_zeroLpNum
-    mpq_QSchange_objcoef(p_mpq, i, zero);
-  }
+  EGcallD (mpq_QSclear_obj (p_mpq));
   /* save the problem if we are really debugging */
   if(DEBUG >= __QS_SB_VERB)
   {
@@ -443,7 +437,6 @@ CLEANUP:
   mpq_EGlpNumFreeArray (y_mpq);
   mpf_EGlpNumFreeArray (x_mpf);
   mpf_EGlpNumFreeArray (y_mpf);
-  mpq_EGlpNumClearVar (zero);
   if (ebasis && basis)
   {
     ILL_IFFREE (ebasis->cstat, char);

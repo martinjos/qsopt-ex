@@ -36,14 +36,6 @@
 /* ========================================================================= */
 
 /* ========================================================================= */
-/** @brief Return codes for #QSexact_delta_solver and
- * #QSexact_delta_optimal_test */
-#define QS_EXACT_UNKNOWN   0
-#define QS_EXACT_UNSAT     1
-#define QS_EXACT_SAT       2
-#define QS_EXACT_DELTA_SAT 3
-
-/* ========================================================================= */
 int QSexact_delta_optimal_test (mpq_QSdata * p,
 																mpq_t * p_sol,
 																mpq_t * d_sol,

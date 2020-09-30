@@ -400,20 +400,7 @@ int main (int ac,
 		rval = QSdelta_solver (p_mpq, delta, x_mpq, y_mpq, basis, simplexalgo, &status);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_2:
-		EGcallD (QSexact_delta_create_soi_obj (p_mpq));
 		rval = QSexact_delta_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status, delta);
-		switch (status)
-		{
-		case QS_EXACT_SAT:
-			status = QS_LP_FEASIBLE;
-			break;
-		case QS_EXACT_UNSAT:
-			status = QS_LP_INFEASIBLE;
-			break;
-		case QS_EXACT_DELTA_SAT:
-			status = QS_LP_DELTA_FEASIBLE;
-			break;
-		}
 		break;
 	}
 	ILL_CLEANUP_IF (rval);
