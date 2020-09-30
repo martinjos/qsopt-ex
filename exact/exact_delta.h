@@ -76,6 +76,10 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 													int *status,
 													mpq_t const delta);
 
+/* ========================================================================= */
+/** @brief create sum-of-infeasibilities objective function for QSexact_delta_solver */
+int QSexact_delta_create_soi_obj (mpq_QSdata *p_mpq);
+
 /** @} */
 /* ========================================================================= */
 /* end of exact_delta.h */

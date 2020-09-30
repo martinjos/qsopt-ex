@@ -140,6 +140,7 @@ EGLPNUM_TYPENAME_QSLIB_INTERFACE int EGLPNUM_TYPENAME_QSopt_primal ( EGLPNUM_TYP
 		EGLPNUM_TYPENAME_QSchange_bounds ( EGLPNUM_TYPENAME_QSprob p, int num, int *collist, char *lu, 
 			const EGLPNUM_TYPE * bounds),
 		EGLPNUM_TYPENAME_QSchange_bound ( EGLPNUM_TYPENAME_QSprob p, int indx, int lu,const EGLPNUM_TYPE bound),
+		EGLPNUM_TYPENAME_QSclear_obj ( EGLPNUM_TYPENAME_QSprob p),
 		EGLPNUM_TYPENAME_QSload_basis ( EGLPNUM_TYPENAME_QSprob p, EGLPNUM_TYPENAME_QSbas B),
 		EGLPNUM_TYPENAME_QSread_and_load_basis ( EGLPNUM_TYPENAME_QSprob p, const char *filename),
 		EGLPNUM_TYPENAME_QSload_basis_array ( EGLPNUM_TYPENAME_QSprob p, char *cstat, char *rstat),

@@ -1593,6 +1593,33 @@ CLEANUP:
 	EG_RETURN (rval);
 }
 
+EGLPNUM_TYPENAME_QSLIB_INTERFACE int EGLPNUM_TYPENAME_QSclear_obj (
+	EGLPNUM_TYPENAME_QSdata * p)
+{
+	int rval = 0;
+	EGLPNUM_TYPE zero;  // Needed because ILLlib_chgobj requires non-const
+	EGLPNUM_TYPENAME_EGlpNumInitVar (zero);
+
+	rval = check_qsdata_pointer (p);
+	CHECKRVALG (rval, CLEANUP);
+
+	int count = p->qslp->nstruct;
+
+	for (int i = 0; i < count; ++i)
+	{
+		rval = EGLPNUM_TYPENAME_ILLlib_chgobj (p->lp, i, zero);
+		CHECKRVALG (rval, CLEANUP);
+	}
+
+	free_cache (p);
+
+CLEANUP:
+
+	EGLPNUM_TYPENAME_EGlpNumClearVar (zero);
+
+	EG_RETURN (rval);
+}
+
 #if 0
 		/*
 		 * Bico - I removed this on 02.04.22.  I don't think we need to support

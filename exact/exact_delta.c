@@ -664,6 +664,39 @@ CLEANUP:
 }
 
 /* ========================================================================= */
+/** @brief create sum-of-infeasibilities objective function for QSexact_delta_solver */
+int QSexact_delta_create_soi_obj (mpq_QSdata *p_mpq)
+{
+	int rval = 0;
+	mpq_t one, minus_one;
+	mpq_init(one);
+	mpq_init(minus_one);
+	int row_count = mpq_QSget_rowcount(p_mpq);
+	int col_count = mpq_QSget_colcount(p_mpq);
+
+	mpq_set_si(one, 1, 1);  // Needed because QSchange_coef requires non-const
+	mpq_set_si(minus_one, -1, 1);
+
+	EGcallD (mpq_QSclear_obj (p_mpq));
+
+	for (int row = 0; row < row_count; ++row)
+	{
+		// Two new columns - identical lines of code
+		EGcallD (mpq_QSnew_col (p_mpq, mpq_oneLpNum, mpq_zeroLpNum, mpq_INFTY, NULL));
+		EGcallD (mpq_QSnew_col (p_mpq, mpq_oneLpNum, mpq_zeroLpNum, mpq_INFTY, NULL));
+		int col_1 = col_count + 2 * row;
+		int col_2 = col_1 + 1;
+		EGcallD (mpq_QSchange_coef (p_mpq, row, col_1, one));
+		EGcallD (mpq_QSchange_coef (p_mpq, row, col_2, minus_one));
+	}
+
+CLEANUP:
+	mpq_clear(minus_one);
+	mpq_clear(one);
+	EG_RETURN (rval);
+}
+
+/* ========================================================================= */
 /** @} */
 /* end of exact_delta.c */
 

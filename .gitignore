@@ -47,6 +47,7 @@
 # Build directory
 
 /build/
+/build-debug/
 
 # http://www.gnu.org/software/automake
 
