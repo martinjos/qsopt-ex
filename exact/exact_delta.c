@@ -420,13 +420,16 @@ static void delta_solved_output (mpq_QSdata * p_mpq,
 	}
 	if (y)
 	{
-		unsigned sz = __EGlpNumArraySize (y_mpq);
+		unsigned sz = p_mpq->qslp->nrows;
 		while (sz--)
 			mpq_set (y[sz], y_mpq[sz]);
 	}
 	if (x)
 	{
-		unsigned sz = __EGlpNumArraySize (x_mpq);
+		/* Beyond nstruct are the redundant artificials, then the built-in
+		 * logicals.
+		 */
+		unsigned sz = p_mpq->qslp->nstruct;
 		while (sz--)
 			mpq_set (x[sz], x_mpq[sz]);
 	}
@@ -507,7 +510,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
 	if (QS_LP_UNSOLVED != *sat_status)
 	{
-		delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
+		delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
 		goto CLEANUP;
 	}
 	MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
@@ -520,7 +523,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
 	if (QS_LP_UNSOLVED != *sat_status)
 	{
-		delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
+		delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
 		goto CLEANUP;
 	}
 	else
@@ -617,7 +620,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
 		if (QS_LP_UNSOLVED != *sat_status)
 		{
-			delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
+			delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
 			goto CLEANUP;
 		}
 		MESSAGE (msg_lvl, "Retesting solution in exact arithmetic");
@@ -630,7 +633,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta);
 		if (QS_LP_UNSOLVED != *sat_status)
 		{
-			delta_solved_output (p_mpq, x, y, x_mpq, y_mpq, *sat_status, delta);
+			delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
 			goto CLEANUP;
 		}
 		else
