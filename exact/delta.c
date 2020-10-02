@@ -14,7 +14,6 @@
 #include "qstruct_mpf.h"
 
 #include "basis_mpq.h"
-#include "exact.h"
 #include "except.h"
 #include "editor_dbl.h"
 #include "editor_mpf.h"
@@ -131,7 +130,8 @@ CLEANUP:
 static int check_delta_feas (mpq_QSdata const * p_mpq,
                              mpq_t delta,
                              int *status,
-                             mpq_t * const x)
+                             mpq_t * const x,
+                             delta_callback_t delta_callback)
 {
   int i, col;
   mpq_t infeas, err1, err2;
@@ -199,13 +199,17 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
     mpq_EGlpNumCopy (delta, infeas);
     *status = QS_LP_DELTA_FEASIBLE;
   }
+  else if (NULL != delta_callback)
+  {
+    delta_callback(p_mpq, x, infeas, delta);
+  }
 
   if (x && (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status))
     EGcallD(QSdelta_copy_x (x, p_mpq));
 
   if (QS_LP_FEASIBLE != *status && QS_LP_DELTA_FEASIBLE != *status)
   {
-    IFMESSAGE(p_mpq->simplex_display, "Failed to derive useful information from solver result");
+    IFMESSAGE(p_mpq->simplex_display, "Failed to make final conclusion on basis of solver result");
   }
 
 CLEANUP:
@@ -236,6 +240,8 @@ CLEANUP:
  * @param status pointer to the integer where we will return the status of the
  * problem, either feasible, delta-feasible or infeasible (we could also return
  * time out).
+ * @param delta_callback if not null, will be called if a delta-satisfying
+ * result is found for some value greater than delta.
  * @return zero on success, non-zero otherwise. */
 int QSdelta_solver (mpq_QSdata * p_orig,
                     mpq_t delta,
@@ -243,7 +249,8 @@ int QSdelta_solver (mpq_QSdata * p_orig,
                     mpq_t * const y,
                     QSbasis * const ebasis,
                     int simplexalgo,
-                    int *status)
+                    int *status,
+                    delta_callback_t delta_callback)
 {
   /* local variables */
   int last_status = 0, last_iter = 0;
@@ -317,7 +324,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       goto CLEANUP;
     }
     /* check for delta-feasibility */
-    EGcallD(check_delta_feas (p_mpq, delta, status, x));
+    EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback));
     if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
       goto CLEANUP;
   }
@@ -418,7 +425,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
         goto CLEANUP;
       }
       /* check for delta-feasibility */
-      EGcallD(check_delta_feas (p_mpq, delta, status, x));
+      EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback));
       if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
         goto CLEANUP;
     }

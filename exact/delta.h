@@ -3,6 +3,7 @@
 
 #include "basicdefs.h"
 #include "qstruct_mpq.h"
+#include "exact.h"
 
 /** @file
  *  @ingroup DeltaSolver */
@@ -28,6 +29,8 @@
  * @param status pointer to the integer where we will return the status of the
  * problem, either feasible, delta-feasible or infeasible (we could also return
  * time out).
+ * @param delta_callback if not null, will be called if a delta-satisfying
+ * result is found for some value greater than delta.
  * @return zero on success, non-zero otherwise. */
 int QSdelta_solver (mpq_QSdata * p_orig,
                     mpq_t delta,
@@ -35,7 +38,8 @@ int QSdelta_solver (mpq_QSdata * p_orig,
                     mpq_t * const y,
                     QSbasis * const ebasis,
                     int simplexalgo,
-                    int *status);
+                    int *status,
+                    delta_callback_t delta_callback);
 
 /** @} */
 

@@ -341,6 +341,14 @@ int QSexact_solver (mpq_QSdata * p_mpq,
 unsigned long QSexact_basis_hash(QSbasis* basis);
 
 /* ========================================================================= */
+/** @brief Callback to receive partial results from delta-complete methods.
+    (Used only within exact_delta.c and delta.c) */
+typedef void (*delta_callback_t)(mpq_QSdata const * p_mpq,
+																 mpq_t * const x,
+																 const mpq_t infeas,
+																 const mpq_t delta);
+
+/* ========================================================================= */
 /** @brief Initializator for global data, this is needed mainly for defining
  * constants in extended floating point precision and for rational precision.
  * This call should be done BEFORE any mpq_xxx mpf_xxx QSxx EGxx call */
