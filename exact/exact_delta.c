@@ -43,12 +43,14 @@
 #include "lpdata_mpq.h"
 #include "fct_mpq.h"
 
+#include <assert.h>
+
 /* ========================================================================= */
 int QSexact_delta_optimal_test (mpq_QSdata * p,
 																mpq_t * p_sol,
 																mpq_t * d_sol,
 																QSbasis * basis,
-																mpq_t const delta,
+																mpq_t delta,
 																delta_callback_t delta_callback)
 {
 	/* local variables */
@@ -219,13 +221,17 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 
 	rval = QS_LP_UNSOLVED;
 
-	if (mpq_sgn (p_infeas) <= 0)
+	assert (mpq_sgn (p_infeas) >= 0);
+
+	if (mpq_sgn (p_infeas) == 0)
 	{
 		rval = QS_LP_FEASIBLE;
+		mpq_set (delta, p_infeas);
 	}
 	else if (mpq_cmp (p_infeas, delta) <= 0)
 	{
 		rval = QS_LP_DELTA_FEASIBLE;
+		mpq_set (delta, p_infeas);
 	}
 	else if (NULL != delta_callback)
 	{
@@ -451,7 +457,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 													QSbasis * const ebasis,
 													int simplexalgo,
 													int *sat_status,
-													mpq_t const delta,
+													mpq_t delta,
 													delta_callback_t delta_callback)
 {
 	/* local variables */

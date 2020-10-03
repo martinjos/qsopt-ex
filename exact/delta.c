@@ -186,6 +186,7 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
     {
       QSlog("Problem is feasible");
     }
+    mpq_EGlpNumCopy (delta, infeas);
     *status = QS_LP_FEASIBLE;
   }
   else if (!mpq_EGlpNumIsLess (delta, infeas))
@@ -321,6 +322,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
     else if (QS_LP_FEASIBLE == *status)
     {
       EGcallD(feasible_output (p_mpq, x));
+      mpq_EGlpNumCopy (delta, mpq_zeroLpNum);
       goto CLEANUP;
     }
     /* check for delta-feasibility */
@@ -422,6 +424,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       else if (QS_LP_FEASIBLE == *status)
       {
         EGcallD(feasible_output (p_mpq, x));
+        mpq_EGlpNumCopy (delta, mpq_zeroLpNum);
         goto CLEANUP;
       }
       /* check for delta-feasibility */

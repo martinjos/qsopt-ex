@@ -40,7 +40,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 																mpq_t * p_sol,
 																mpq_t * d_sol,
 																QSbasis * basis,
-																mpq_t const delta,
+																mpq_t delta,
 																delta_callback_t delta_callback);
 
 /* ========================================================================= */
@@ -70,7 +70,7 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 													QSbasis * const basis,
 													int simplexalgo,
 													int *status,
-													mpq_t const delta,
+													mpq_t delta,
 													delta_callback_t delta_callback);
 
 /* ========================================================================= */
