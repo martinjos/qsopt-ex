@@ -31,6 +31,7 @@
  * time out).
  * @param delta_callback if not null, will be called if a delta-satisfying
  * result is found for some value greater than delta.
+ * @param callback_data additional parameter to be passed to delta_callback.
  * @return zero on success, non-zero otherwise. */
 int QSdelta_solver (mpq_QSdata * p_orig,
                     mpq_t delta,
@@ -39,7 +40,8 @@ int QSdelta_solver (mpq_QSdata * p_orig,
                     QSbasis * const ebasis,
                     int simplexalgo,
                     int *status,
-                    delta_callback_t delta_callback);
+                    delta_callback_t delta_callback,
+                    void *callback_data);
 
 /** @} */
 

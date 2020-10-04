@@ -346,7 +346,8 @@ unsigned long QSexact_basis_hash(QSbasis* basis);
 typedef void (*delta_callback_t)(mpq_QSdata const * p_mpq,
 																 mpq_t * const x,
 																 const mpq_t infeas,
-																 const mpq_t delta);
+																 const mpq_t delta,
+																 void *data);
 
 /* ========================================================================= */
 /** @brief Initializator for global data, this is needed mainly for defining

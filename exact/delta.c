@@ -132,7 +132,8 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
                              int *status,
                              mpq_t * const x,
                              delta_callback_t delta_callback,
-                             mpq_t last_infeas)
+                             mpq_t last_infeas,
+                             void *callback_data)
 {
   int i, col;
   mpq_t infeas, err1, err2;
@@ -206,7 +207,7 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
     if (mpq_sgn (last_infeas) == 0 || mpq_cmp (infeas, last_infeas) < 0)
     {
       mpq_set (last_infeas, infeas);
-      delta_callback(p_mpq, x, infeas, delta);
+      delta_callback(p_mpq, x, infeas, delta, callback_data);
     }
   }
 
@@ -248,6 +249,7 @@ CLEANUP:
  * time out).
  * @param delta_callback if not null, will be called if a delta-satisfying
  * result is found for some value greater than delta.
+ * @param callback_data additional parameter to be passed to delta_callback.
  * @return zero on success, non-zero otherwise. */
 int QSdelta_solver (mpq_QSdata * p_orig,
                     mpq_t delta,
@@ -256,7 +258,8 @@ int QSdelta_solver (mpq_QSdata * p_orig,
                     QSbasis * const ebasis,
                     int simplexalgo,
                     int *status,
-                    delta_callback_t delta_callback)
+                    delta_callback_t delta_callback,
+                    void *callback_data)
 {
   /* local variables */
   int last_status = 0, last_iter = 0;
@@ -333,7 +336,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       goto CLEANUP;
     }
     /* check for delta-feasibility */
-    EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback, last_infeas));
+    EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback, last_infeas, callback_data));
     if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
       goto CLEANUP;
   }
@@ -435,7 +438,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
         goto CLEANUP;
       }
       /* check for delta-feasibility */
-      EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback, last_infeas));
+      EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback, last_infeas, callback_data));
       if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
         goto CLEANUP;
     }

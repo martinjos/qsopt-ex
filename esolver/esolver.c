@@ -397,10 +397,10 @@ int main (int ac,
 		mpq_sub (delta, obj_up, obj_lo);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_1:
-		rval = QSdelta_solver (p_mpq, delta, x_mpq, y_mpq, basis, simplexalgo, &status, NULL);
+		rval = QSdelta_solver (p_mpq, delta, x_mpq, y_mpq, basis, simplexalgo, &status, NULL, NULL);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_2:
-		rval = QSexact_delta_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status, delta, NULL);
+		rval = QSexact_delta_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status, delta, NULL, NULL);
 		break;
 	}
 	ILL_CLEANUP_IF (rval);

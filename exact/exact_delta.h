@@ -42,7 +42,8 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 																QSbasis * basis,
 																mpq_t delta,
 																delta_callback_t delta_callback,
-																mpq_t last_infeas);
+																mpq_t last_infeas,
+																void *callback_data);
 
 /* ========================================================================= */
 /** @brief Given an mpq_QSdata problem, solve the delta-satisfiability problem
@@ -64,6 +65,7 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
  * delta-satisfying assignment.
  * @param delta_callback if not null, will be called if a delta-satisfying
  * result is found for some value greater than delta.
+ * @param callback_data additional parameter to be passed to delta_callback.
  * @return zero on success, non-zero otherwise. */
 int QSexact_delta_solver (mpq_QSdata * p_mpq,
 													mpq_t * const x,
@@ -72,7 +74,8 @@ int QSexact_delta_solver (mpq_QSdata * p_mpq,
 													int simplexalgo,
 													int *status,
 													mpq_t delta,
-													delta_callback_t delta_callback);
+													delta_callback_t delta_callback,
+													void *callback_data);
 
 /* ========================================================================= */
 /** @brief create sum-of-infeasibilities objective function for QSexact_delta_solver */
