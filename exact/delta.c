@@ -131,7 +131,8 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
                              mpq_t delta,
                              int *status,
                              mpq_t * const x,
-                             delta_callback_t delta_callback)
+                             delta_callback_t delta_callback,
+                             mpq_t last_infeas)
 {
   int i, col;
   mpq_t infeas, err1, err2;
@@ -202,7 +203,11 @@ static int check_delta_feas (mpq_QSdata const * p_mpq,
   }
   else if (NULL != delta_callback)
   {
-    delta_callback(p_mpq, x, infeas, delta);
+    if (mpq_sgn (last_infeas) == 0 || mpq_cmp (infeas, last_infeas) < 0)
+    {
+      mpq_set (last_infeas, infeas);
+      delta_callback(p_mpq, x, infeas, delta);
+    }
   }
 
   if (x && (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status))
@@ -267,6 +272,8 @@ int QSdelta_solver (mpq_QSdata * p_orig,
   mpq_t *y_mpq = 0;
   mpf_t *x_mpf = 0,
    *y_mpf = 0;
+  mpq_t last_infeas;
+  mpq_init (last_infeas);
   int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_orig->simplex_display) * 10000;
   *status = QS_LP_UNSOLVED;
   p_mpq = mpq_QScopy_prob (p_orig, "mpq_feas_problem");
@@ -326,7 +333,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
       goto CLEANUP;
     }
     /* check for delta-feasibility */
-    EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback));
+    EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback, last_infeas));
     if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
       goto CLEANUP;
   }
@@ -428,7 +435,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
         goto CLEANUP;
       }
       /* check for delta-feasibility */
-      EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback));
+      EGcallD(check_delta_feas (p_mpq, delta, status, x, delta_callback, last_infeas));
       if (QS_LP_FEASIBLE == *status || QS_LP_DELTA_FEASIBLE == *status)
         goto CLEANUP;
     }
@@ -442,6 +449,7 @@ int QSdelta_solver (mpq_QSdata * p_orig,
   }
   /* ending */
 CLEANUP:
+  mpq_clear (last_infeas);
   dbl_EGlpNumFreeArray (x_dbl);
   dbl_EGlpNumFreeArray (y_dbl);
   mpq_EGlpNumFreeArray (y_mpq);

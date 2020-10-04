@@ -41,7 +41,8 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 																mpq_t * d_sol,
 																QSbasis * basis,
 																mpq_t delta,
-																delta_callback_t delta_callback);
+																delta_callback_t delta_callback,
+																mpq_t last_infeas);
 
 /* ========================================================================= */
 /** @brief Given an mpq_QSdata problem, solve the delta-satisfiability problem

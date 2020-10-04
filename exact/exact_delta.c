@@ -51,7 +51,8 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 																mpq_t * d_sol,
 																QSbasis * basis,
 																mpq_t delta,
-																delta_callback_t delta_callback)
+																delta_callback_t delta_callback,
+																mpq_t last_infeas)
 {
 	/* local variables */
 	register int i,
@@ -235,7 +236,11 @@ int QSexact_delta_optimal_test (mpq_QSdata * p,
 	}
 	else if (NULL != delta_callback)
 	{
-		delta_callback(p, p_sol, p_infeas, delta);
+		if (mpq_sgn (last_infeas) == 0 || mpq_cmp (p_infeas, last_infeas) < 0)
+		{
+			mpq_set (last_infeas, p_infeas);
+			delta_callback(p, p_sol, p_infeas, delta);
+		}
 	}
 
 	if (QS_LP_FEASIBLE == rval || QS_LP_DELTA_FEASIBLE == rval)
@@ -475,6 +480,8 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 	 *y_mpq = 0;
 	mpf_t *x_mpf = 0,
 	 *y_mpf = 0;
+	mpq_t last_infeas;
+	mpq_init (last_infeas);
 	int const msg_lvl = __QS_SB_VERB <= DEBUG ? 0: (1 - p_orig->simplex_display) * 10000;
 	*sat_status = QS_LP_UNSOLVED;
 	p_mpq = mpq_QScopy_prob (p_orig, "mpq_soi_problem");
@@ -523,7 +530,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 	basis = dbl_QSget_basis (p_dbl);
 	MESSAGE (msg_lvl, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta,
-																						delta_callback);
+																						delta_callback, last_infeas);
 	if (QS_LP_UNSOLVED != *sat_status)
 	{
 		delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
@@ -537,7 +544,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 	EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 	EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 	*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta,
-																						delta_callback);
+																						delta_callback, last_infeas);
 	if (QS_LP_UNSOLVED != *sat_status)
 	{
 		delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
@@ -635,7 +642,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 		mpf_EGlpNumFreeArray (x_mpf);
 		mpf_EGlpNumFreeArray (y_mpf);
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta,
-																							delta_callback);
+																							delta_callback, last_infeas);
 		if (QS_LP_UNSOLVED != *sat_status)
 		{
 			delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
@@ -649,7 +656,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 		EGcallD(mpq_QSget_x_array (p_mpq, x_mpq));
 		EGcallD(mpq_QSget_pi_array (p_mpq, y_mpq));
 		*sat_status = QSexact_delta_optimal_test (p_mpq, x_mpq, y_mpq, basis, delta,
-																							delta_callback);
+																							delta_callback, last_infeas);
 		if (QS_LP_UNSOLVED != *sat_status)
 		{
 			delta_solved_output (p_orig, x, y, x_mpq, y_mpq, *sat_status, delta);
@@ -667,6 +674,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 	}
 	/* ending */
 CLEANUP:
+	mpq_clear (last_infeas);
 	dbl_EGlpNumFreeArray (x_dbl);
 	dbl_EGlpNumFreeArray (y_dbl);
 	mpq_EGlpNumFreeArray (x_mpq);
