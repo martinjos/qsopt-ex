@@ -396,7 +396,7 @@ int main (int ac,
 		|| mpq_QSset_param (p_mpq, QS_PARAM_DUAL_PRICING, dstrategy)
 		|| mpq_QSset_param (p_mpq, QS_PARAM_SIMPLEX_SCALING, usescaling);
 	ILL_CLEANUP_IF (rval);
-	if (printsol)
+	if (printsol || algo == ALGO_DELTA_OPT)
 	{
 		x_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->ncols);
 		y_mpq = mpq_EGlpNumAllocArray (p_mpq->qslp->nrows);
