@@ -145,47 +145,54 @@ static void sighandler(int s)
 }
 /* ========================================================================= */
 /** @brief function to handle resource usage limits */
-static int mem_limits(void)
+static int mem_limits(int log_level)
 {
 	int rval = 0;
 	struct rlimit mlim;
 	rval = getrlimit(RLIMIT_CPU,&mlim);
 	CHECKRVAL(rval);
-	fprintf(stderr, "Cur rtime limit %ld, trying to set to %lg\n", mlim.rlim_cur, max_rtime);
+	if (log_level >= 1)
+		fprintf(stderr, "Cur rtime limit %ld, trying to set to %lg\n", mlim.rlim_cur, max_rtime);
 	if(max_rtime > mlim.rlim_max) max_rtime = (double)mlim.rlim_max;
 	mlim.rlim_cur = (rlim_t)max_rtime;
 	rval = setrlimit(RLIMIT_CPU,&mlim);
 	TESTERRNOIF(rval);
-	fprintf(stderr, "New rtime limit %ld (%.3lg)\n", mlim.rlim_cur, max_rtime);
+	if (log_level >= 1)
+		fprintf(stderr, "New rtime limit %ld (%.3lg)\n", mlim.rlim_cur, max_rtime);
 	rval = getrlimit(RLIMIT_DATA,&mlim);
 	TESTERRNOIF(rval);
-	fprintf(stderr, "Cur data limit %ld,%ld (soft,hard)\n", mlim.rlim_cur, 
-					mlim.rlim_max);
+	if (log_level >= 1)
+		fprintf(stderr, "Cur data limit %ld,%ld (soft,hard)\n", mlim.rlim_cur,
+						mlim.rlim_max);
 	mlim.rlim_cur = memlimit;				
 	rval = setrlimit(RLIMIT_DATA,&mlim);				
 	TESTERRNOIF(rval);
 	rval = getrlimit(RLIMIT_DATA,&mlim);
 	TESTERRNOIF(rval);
-	fprintf(stderr, "New data limit %ld,%ld (soft,hard)\n", mlim.rlim_cur, 
-					mlim.rlim_max);
+	if (log_level >= 1)
+		fprintf(stderr, "New data limit %ld,%ld (soft,hard)\n", mlim.rlim_cur,
+						mlim.rlim_max);
 	rval = getrlimit(RLIMIT_AS,&mlim);
 	TESTERRNOIF(rval);
-	fprintf(stderr, "Cur address space limit %ld,%ld (soft,hard)\n", 
-					mlim.rlim_cur, mlim.rlim_max);
+	if (log_level >= 1)
+		fprintf(stderr, "Cur address space limit %ld,%ld (soft,hard)\n",
+						mlim.rlim_cur, mlim.rlim_max);
 	mlim.rlim_cur = memlimit;	
 	rval = setrlimit(RLIMIT_AS,&mlim);				
 	TESTERRNOIF(rval);
 	rval = getrlimit(RLIMIT_AS,&mlim);
 	TESTERRNOIF(rval);
-	fprintf(stderr, "New address space limit %ld,%ld (soft,hard)\n", 
-					mlim.rlim_cur, mlim.rlim_max);
+	if (log_level >= 1)
+		fprintf(stderr, "New address space limit %ld,%ld (soft,hard)\n",
+						mlim.rlim_cur, mlim.rlim_max);
 	mlim.rlim_cur = 0;
 	rval = setrlimit(RLIMIT_CORE,&mlim);				
 	TESTERRNOIF(rval);
 	rval = getrlimit(RLIMIT_CORE,&mlim);
 	TESTERRNOIF(rval);
-	fprintf(stderr, "New core dump space limit %ld,%ld (soft,hard)\n", 
-					mlim.rlim_cur, mlim.rlim_max);
+	if (log_level >= 1)
+		fprintf(stderr, "New core dump space limit %ld,%ld (soft,hard)\n",
+						mlim.rlim_cur, mlim.rlim_max);
 	/* set signal handler for SIGXCPU */
 	signal(SIGXCPU,sighandler);
 	return rval;
@@ -286,7 +293,7 @@ static int parseargs (int ac,
 
 	fname = av[boptind++];
 	fprintf (stderr, "Reading problem from %s\n", fname);
-	mem_limits();
+	mem_limits(simplex_display);
 	return 0;
 }
 

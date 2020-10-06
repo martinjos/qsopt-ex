@@ -229,7 +229,7 @@ ILL_PTRWORLD_LEAKS_ROUTINE (intptr, intptr_check_leaks, this_val, int)
 		goto CLEANUP;
 	}
 
-	QSlog("EGLPNUM_TYPENAME_ILLlp_add_logicals ...");
+	//QSlog("EGLPNUM_TYPENAME_ILLlp_add_logicals ...");
 
 	A = &lp->A;
 	sense = lp->sense;

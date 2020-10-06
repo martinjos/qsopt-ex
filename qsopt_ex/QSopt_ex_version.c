@@ -31,7 +31,8 @@
 void
 QSopt_ex_version(void)
 {
-	QSlog("Using %s %s", PACKAGE_NAME, PACKAGE_VERSION);
+	QSlog("Using %s %s (%s)",
+		  PACKAGE_NAME, PACKAGE_VERSION, BUILD_REPOSITORY_STATUS);
 }
 
 const char* QSopt_ex_repository_status(void)
