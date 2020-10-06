@@ -85,6 +85,7 @@ static void usage (char *s)
 	fprintf (stderr, "   -L    input file is in lp format (default: mps)\n");
 	fprintf (stderr, "   -O    write the final solution to the given file\n");
 	fprintf (stderr, "         append .gz/.bz2 to the .sol extension to compress the file\n");
+	fprintf (stderr, "   -M    write model to stdout\n");
 	fprintf (stderr, "   -p #  run primal simplex with pricing rule #\n");
 	fprintf (stderr,
 					 "         (%d-Dantzig, %d-Devex, %d-Steep (default), %d-Partial\n",
@@ -206,7 +207,7 @@ static int parseargs (int ac,
 	int boptind = 1;
 	char *boptarg = 0;
 
-	while ((c = ILLutil_bix_getopt (ac, av, "a:b:B:d:D:EILm:O:p:P:R:SvV:",
+	while ((c = ILLutil_bix_getopt (ac, av, "a:b:B:d:D:EILm:MO:p:P:R:SvV:",
 																	&boptind, &boptarg)) != EOF)
 		switch (c)
 		{
@@ -258,6 +259,9 @@ static int parseargs (int ac,
 		case 'O':
 			printsol = 1;
 			solname = strdup(boptarg);
+			break;
+		case 'M':
+			printsol = 1;
 			break;
 		case 'p':
 			simplexalgo = PRIMAL_SIMPLEX;
@@ -417,46 +421,61 @@ int main (int ac,
 	}
 	ILL_CLEANUP_IF (rval);
 	ILLutil_stop_timer (&timer_solve, 1);
-	if (printsol)
+	/* display result */
+	EGioFile_t *out_f;
+	if (solname)
 	{
 		char out_f_name[1024];
-		EGioFile_t *out_f;
 		sprintf (out_f_name, "%s", solname);
 		out_f = EGioOpen (out_f_name, "w");
-		switch (status)
-		{
-		case QS_LP_OPTIMAL:
-			EGioPrintf (out_f, "status = OPTIMAL\n");
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-			break;
-		case QS_LP_DELTA_OPTIMAL:
-			EGioPrintf (out_f, "status = delta-OPTIMAL with delta = %g\n", delta);
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-			break;
-		case QS_LP_FEASIBLE:
-			EGioPrintf (out_f, "status = FEASIBLE\n");
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-			break;
-		case QS_LP_DELTA_FEASIBLE:
-			EGioPrintf (out_f, "status = delta-FEASIBLE with delta = %g\n", delta);
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-			break;
-		case QS_LP_INFEASIBLE:
-			EGioPrintf (out_f, "status = INFEASIBLE\n");
-			break;
-		case QS_LP_UNBOUNDED:
-			EGioPrintf (out_f, "status = UNBOUNDED\n");
-			break;
-		default:
-			EGioPrintf (out_f, "status = UNDEFINED\n");
-			break;
-		}
-		EGioClose (out_f);
 	}
+	else
+		out_f = EGioOpenFILE (stdout);
+	switch (status)
+	{
+	case QS_LP_OPTIMAL:
+		EGioPrintf (out_f, "status = OPTIMAL\n");
+		if (printsol)
+		{
+			rval = QSexact_print_sol (p_mpq, out_f);
+			CHECKRVALG(rval,CLEANUP);
+		}
+		break;
+	case QS_LP_DELTA_OPTIMAL:
+		EGioPrintf (out_f, "status = delta-OPTIMAL with delta = %g\n", delta);
+		if (printsol)
+		{
+			rval = QSexact_print_sol (p_mpq, out_f);
+			CHECKRVALG(rval,CLEANUP);
+		}
+		break;
+	case QS_LP_FEASIBLE:
+		EGioPrintf (out_f, "status = FEASIBLE\n");
+		if (printsol)
+		{
+			rval = QSexact_print_sol (p_mpq, out_f);
+			CHECKRVALG(rval,CLEANUP);
+		}
+		break;
+	case QS_LP_DELTA_FEASIBLE:
+		EGioPrintf (out_f, "status = delta-FEASIBLE with delta = %g\n", delta);
+		if (printsol)
+		{
+			rval = QSexact_print_sol (p_mpq, out_f);
+			CHECKRVALG(rval,CLEANUP);
+		}
+		break;
+	case QS_LP_INFEASIBLE:
+		EGioPrintf (out_f, "status = INFEASIBLE\n");
+		break;
+	case QS_LP_UNBOUNDED:
+		EGioPrintf (out_f, "status = UNBOUNDED\n");
+		break;
+	default:
+		EGioPrintf (out_f, "status = UNDEFINED\n");
+		break;
+	}
+	EGioClose (out_f);
 	/* ending */
 CLEANUP:
 	if (solname)
