@@ -50,6 +50,7 @@ static int lpfile = 0;
 static int algo = ALGO_OPT;
 static int usescaling = 1;
 static int showversion = 0;
+static int simplex_display = 1;
 static int simplexalgo = PRIMAL_SIMPLEX;
 static int pstrategy = QS_PRICE_PSTEEP;
 static int dstrategy = QS_PRICE_DSTEEP;
@@ -97,6 +98,7 @@ static void usage (char *s)
 					 QS_PRICE_DDEVEX);
 	fprintf (stderr, "   -S    do NOT scale the initial LP\n");
 	fprintf (stderr, "   -v    print QSopt version number\n");
+	fprintf (stderr, "   -V n  verbosity level (0-3, default: 1)\n");
 	fprintf (stderr, "   -R n  maximum running time allowed, default %lf\n",
 						max_rtime);
 	fprintf (stderr, "   -m n  maximum memory usage allowed, default %lu\n", 
@@ -197,7 +199,7 @@ static int parseargs (int ac,
 	int boptind = 1;
 	char *boptarg = 0;
 
-	while ((c = ILLutil_bix_getopt (ac, av, "a:b:B:d:D:EILm:O:p:P:R:Sv",
+	while ((c = ILLutil_bix_getopt (ac, av, "a:b:B:d:D:EILm:O:p:P:R:SvV:",
 																	&boptind, &boptarg)) != EOF)
 		switch (c)
 		{
@@ -259,6 +261,9 @@ static int parseargs (int ac,
 			break;
 		case 'v':
 			showversion = 1;
+			break;
+		case 'V':
+			simplex_display = atoi (boptarg);
 			break;
 		case '?':
 		default:
@@ -375,7 +380,7 @@ int main (int ac,
 	}
 	ILLutil_stop_timer (&timer_read, 1);
 	/* set the readed flags */
-	rval = mpq_QSset_param (p_mpq, QS_PARAM_SIMPLEX_DISPLAY, 1)
+	rval = mpq_QSset_param (p_mpq, QS_PARAM_SIMPLEX_DISPLAY, simplex_display)
 		|| mpq_QSset_param (p_mpq, QS_PARAM_PRIMAL_PRICING, pstrategy)
 		|| mpq_QSset_param (p_mpq, QS_PARAM_DUAL_PRICING, dstrategy)
 		|| mpq_QSset_param (p_mpq, QS_PARAM_SIMPLEX_SCALING, usescaling);
@@ -447,7 +452,8 @@ int main (int ac,
 	}
 	/* ending */
 CLEANUP:
-	EGfree(solname);
+	if (solname)
+		EGfree(solname);
 	mpq_EGlpNumFreeArray (x_mpq);
 	mpq_EGlpNumFreeArray (y_mpq);
 	/* free the last allocated basis, and if we wanted to save it, do so */
