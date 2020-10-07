@@ -94,6 +94,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "config.h"
 #include "logging-private.h"
 
 #include "util.h"
@@ -245,12 +246,12 @@ static void ILL_print (
 	{
 		if (t->count > 1)
 		{
-			QSlog("Time for %s: %.2f seconds (%.2f total in %d calls).",
+			QSlog("Time for %s: %.17g seconds (%.17g total in %d calls).",
 									t->name, z, t->cum_zeit, t->count);
 		}
 		else
 		{
-			QSlog("Time for %s: %.2f seconds.", t->name, z);
+			QSlog("Time for %s: %.17g seconds.", t->name, z);
 		}
 	}
 	else if (printit == 3 || (printit == 4 && z > 0.0))
