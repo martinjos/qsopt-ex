@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <limits.h>
+#include <math.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -56,6 +57,7 @@ static int pstrategy = QS_PRICE_PSTEEP;
 static int dstrategy = QS_PRICE_DSTEEP;
 static unsigned precision = 128;
 static int printsol = 0;
+static int continuous_output = 0;
 static char *solname = 0;
 static char *readbasis = 0;
 static char *writebasis = 0;
@@ -76,6 +78,7 @@ static void usage (char *s)
 	fprintf (stderr, "       dfp1 = delta-feasibility, phase 1\n");
 	fprintf (stderr, "       dfp2 = delta-feasibility, phase 2\n");
 	fprintf (stderr, "   -D #  delta to use for delta-complete algorithms (default: 0)\n");
+	fprintf (stderr, "   -c    display all delta-sat thresholds when available (-a dfp1 or dfp2 only)\n");
 	fprintf (stderr, "   -b f  write basis to file f\n");
 	fprintf (stderr, "   -B f  read initial basis from file f\n");
 #if 0
@@ -207,7 +210,7 @@ static int parseargs (int ac,
 	int boptind = 1;
 	char *boptarg = 0;
 
-	while ((c = ILLutil_bix_getopt (ac, av, "a:b:B:d:D:EILm:MO:p:P:R:SvV:",
+	while ((c = ILLutil_bix_getopt (ac, av, "a:b:cB:d:D:EILm:MO:p:P:R:SvV:",
 																	&boptind, &boptarg)) != EOF)
 		switch (c)
 		{
@@ -224,6 +227,9 @@ static int parseargs (int ac,
 				usage (av[0]);
 				return 1;
 			}
+			break;
+		case 'c':
+			continuous_output = 1;
 			break;
 		case 'D': {
 			int nchar = mpq_EGlpNumReadStrXc (delta, boptarg);
@@ -299,6 +305,29 @@ static int parseargs (int ac,
 	fprintf (stderr, "Reading problem from %s\n", fname);
 	mem_limits(simplex_display);
 	return 0;
+}
+
+void free_gmp_str (char *str)
+{
+	// Free memory allocated by mpq_get_str (etc.)
+	void (*free_func) (void *, size_t);
+	mp_get_memory_functions (NULL, NULL, &free_func);
+	free_func (str, strlen (str) + 1);
+}
+
+void partial_result (mpq_QSdata const * p_mpq,
+										 mpq_t * const x,
+										 const mpq_t infeas,
+										 const mpq_t delta,
+										 void *data)
+{
+	char *mpq_str = NULL;
+	mpq_str = mpq_get_str (NULL, 10, infeas);
+	// Strictly speaking, this is > rather than >=, but the point is that it
+	// could be anything >=.
+	printf ("PARTIAL: status = delta-FEASIBLE with delta = %.17g ( >= %s)\n",
+					nextafter (mpq_get_d (infeas), 1.0/0.0), mpq_str);
+	free_gmp_str (mpq_str);
 }
 
 /* ========================================================================= */
@@ -413,10 +442,12 @@ int main (int ac,
 		mpq_sub (delta, obj_up, obj_lo);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_1:
-		rval = QSdelta_solver (p_mpq, delta, x_mpq, y_mpq, basis, simplexalgo, &status, NULL, NULL);
+		rval = QSdelta_solver (p_mpq, delta, x_mpq, y_mpq, basis, simplexalgo, &status,
+													 continuous_output ? partial_result : NULL, NULL);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_2:
-		rval = QSexact_delta_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status, delta, NULL, NULL);
+		rval = QSexact_delta_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status, delta,
+																 continuous_output ? partial_result : NULL, NULL);
 		break;
 	}
 	ILL_CLEANUP_IF (rval);
