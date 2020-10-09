@@ -52,6 +52,7 @@ static int algo = ALGO_OPT;
 static int usescaling = 1;
 static int showversion = 0;
 static int simplex_display = 1;
+static int print_times = 0;
 static int simplexalgo = PRIMAL_SIMPLEX;
 static int pstrategy = QS_PRICE_PSTEEP;
 static int dstrategy = QS_PRICE_DSTEEP;
@@ -103,6 +104,7 @@ static void usage (char *s)
 	fprintf (stderr, "   -S    do NOT scale the initial LP\n");
 	fprintf (stderr, "   -v    print QSopt version number\n");
 	fprintf (stderr, "   -V n  verbosity level (0-3, default: 1)\n");
+	fprintf (stderr, "   -t    display timings alongside results\n");
 	fprintf (stderr, "   -R n  maximum running time allowed, default %lf\n",
 						max_rtime);
 	fprintf (stderr, "   -m n  maximum memory usage allowed, default %lu\n", 
@@ -210,7 +212,7 @@ static int parseargs (int ac,
 	int boptind = 1;
 	char *boptarg = 0;
 
-	while ((c = ILLutil_bix_getopt (ac, av, "a:b:cB:d:D:EILm:MO:p:P:R:SvV:",
+	while ((c = ILLutil_bix_getopt (ac, av, "a:b:cB:d:D:EILm:MO:p:P:R:StvV:",
 																	&boptind, &boptarg)) != EOF)
 		switch (c)
 		{
@@ -275,6 +277,9 @@ static int parseargs (int ac,
 			break;
 		case 'S':
 			usescaling = 0;
+			break;
+		case 't':
+			print_times = 1;
 			break;
 		case 'v':
 			showversion = 1;
@@ -347,10 +352,14 @@ void partial_result (mpq_QSdata const * p_mpq,
 										 const mpq_t delta,
 										 void *data)
 {
+	ILLutil_timer *p_timer_solve = (ILLutil_timer *) data;
 	char *mpq_str = NULL;
 	mpq_str = mpq_get_str (NULL, 10, infeas);
-	printf ("PARTIAL: status = delta-FEASIBLE with delta = %.17g ( >= %s)\n",
+	printf ("PARTIAL: status = delta-FEASIBLE with delta = %.17g ( >= %s)",
 					mpq_upper_d (infeas), mpq_str);
+	if (p_timer_solve)
+		printf (" after %.17g seconds", ILLutil_zeit() - p_timer_solve->szeit);
+	printf ("\n");
 	free_gmp_str (mpq_str);
 }
 
@@ -363,6 +372,7 @@ void partial_full_result (const mpq_QSdata const * p_mpq,
 												  const mpq_t delta,
 												  void *data)
 {
+	ILLutil_timer *p_timer_solve = (ILLutil_timer *) data;
 	char *diff_str = NULL;
 	char *obj_lo_str = NULL;
 	char *obj_up_str = NULL;
@@ -375,9 +385,12 @@ void partial_full_result (const mpq_QSdata const * p_mpq,
 					mpq_upper_d (diff), diff_str,
 					mpq_lower_d (obj_lo),	mpq_upper_d (obj_up));
 	if (mpq_sgn (diff) == 0)
-		printf (" = %s\n", obj_lo_str);
+		printf (" = %s", obj_lo_str);
 	else
-		printf (" = [%s, %s]\n", obj_lo_str, obj_up_str);
+		printf (" = [%s, %s]", obj_lo_str, obj_up_str);
+	if (p_timer_solve)
+		printf (" after %.17g seconds", ILLutil_zeit() - p_timer_solve->szeit);
+	printf ("\n");
 	free_gmp_str (diff_str);
 	free_gmp_str (obj_lo_str);
 	if (mpq_sgn (diff) != 0)
@@ -493,16 +506,19 @@ int main (int ac,
 		break;
 	case ALGO_DELTA_OPT:
 		rval = QSdelta_full_solver (p_mpq, delta, x_mpq, y_mpq, obj_lo, obj_up, basis, simplexalgo, &status,
-																continuous_output ? partial_full_result : NULL, NULL);
+																continuous_output ? partial_full_result : NULL,
+																print_times ? &timer_solve : NULL);
 		mpq_sub (delta, obj_up, obj_lo);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_1:
 		rval = QSdelta_solver (p_mpq, delta, x_mpq, y_mpq, basis, simplexalgo, &status,
-													 continuous_output ? partial_result : NULL, NULL);
+													 continuous_output ? partial_result : NULL,
+													 print_times ? &timer_solve : NULL);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_2:
 		rval = QSexact_delta_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status, delta,
-																 continuous_output ? partial_result : NULL, NULL);
+																 continuous_output ? partial_result : NULL,
+																 print_times ? &timer_solve : NULL);
 		break;
 	}
 	ILL_CLEANUP_IF (rval);
@@ -520,7 +536,7 @@ int main (int ac,
 	switch (status)
 	{
 	case QS_LP_OPTIMAL:
-		EGioPrintf (out_f, "status = OPTIMAL\n");
+		EGioPrintf (out_f, "status = OPTIMAL");
 		if (printsol)
 		{
 			rval = QSexact_print_sol (p_mpq, out_f);
@@ -528,7 +544,7 @@ int main (int ac,
 		}
 		break;
 	case QS_LP_DELTA_OPTIMAL:
-		EGioPrintf (out_f, "status = delta-OPTIMAL with delta = %g\n", delta);
+		EGioPrintf (out_f, "status = delta-OPTIMAL with delta = %g", delta);
 		if (printsol)
 		{
 			rval = QSexact_print_sol (p_mpq, out_f);
@@ -536,7 +552,7 @@ int main (int ac,
 		}
 		break;
 	case QS_LP_FEASIBLE:
-		EGioPrintf (out_f, "status = FEASIBLE\n");
+		EGioPrintf (out_f, "status = FEASIBLE");
 		if (printsol)
 		{
 			rval = QSexact_print_sol (p_mpq, out_f);
@@ -544,7 +560,7 @@ int main (int ac,
 		}
 		break;
 	case QS_LP_DELTA_FEASIBLE:
-		EGioPrintf (out_f, "status = delta-FEASIBLE with delta = %g\n", delta);
+		EGioPrintf (out_f, "status = delta-FEASIBLE with delta = %g", delta);
 		if (printsol)
 		{
 			rval = QSexact_print_sol (p_mpq, out_f);
@@ -552,15 +568,18 @@ int main (int ac,
 		}
 		break;
 	case QS_LP_INFEASIBLE:
-		EGioPrintf (out_f, "status = INFEASIBLE\n");
+		EGioPrintf (out_f, "status = INFEASIBLE");
 		break;
 	case QS_LP_UNBOUNDED:
-		EGioPrintf (out_f, "status = UNBOUNDED\n");
+		EGioPrintf (out_f, "status = UNBOUNDED");
 		break;
 	default:
-		EGioPrintf (out_f, "status = UNDEFINED\n");
+		EGioPrintf (out_f, "status = UNDEFINED");
 		break;
 	}
+	if (print_times)
+		EGioPrintf (out_f, " after %.17g seconds", timer_solve.cum_zeit);
+	EGioPrintf (out_f, "\n");
 	EGioClose (out_f);
 	/* ending */
 CLEANUP:
