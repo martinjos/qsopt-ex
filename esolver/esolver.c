@@ -78,7 +78,7 @@ static void usage (char *s)
 	fprintf (stderr, "       dfp1 = delta-feasibility, phase 1\n");
 	fprintf (stderr, "       dfp2 = delta-feasibility, phase 2\n");
 	fprintf (stderr, "   -D #  delta to use for delta-complete algorithms (default: 0)\n");
-	fprintf (stderr, "   -c    display all delta-sat thresholds when available (-a dfp1 or dfp2 only)\n");
+	fprintf (stderr, "   -c    display all delta-sat/opt thresholds when available\n");
 	fprintf (stderr, "   -b f  write basis to file f\n");
 	fprintf (stderr, "   -B f  read initial basis from file f\n");
 #if 0
@@ -315,6 +315,32 @@ void free_gmp_str (char *str)
 	free_func (str, strlen (str) + 1);
 }
 
+double mpq_lower_d (const mpq_t mpq)
+{
+	double dbl = mpq_get_d (mpq);
+	mpq_t dbl_mpq;
+	mpq_init (dbl_mpq);
+	mpq_set_d (dbl_mpq, dbl);  // Undocumented, but it does exist
+	if (mpq_cmp (dbl_mpq, mpq) > 0) {
+		dbl = nextafter (dbl, -1.0/0.0);
+	}
+	mpq_clear (dbl_mpq);
+	return dbl;
+}
+
+double mpq_upper_d (const mpq_t mpq)
+{
+	double dbl = mpq_get_d (mpq);
+	mpq_t dbl_mpq;
+	mpq_init (dbl_mpq);
+	mpq_set_d (dbl_mpq, dbl);  // Undocumented, but it does exist
+	if (mpq_cmp (dbl_mpq, mpq) < 0) {
+		dbl = nextafter (dbl, 1.0/0.0);
+	}
+	mpq_clear (dbl_mpq);
+	return dbl;
+}
+
 void partial_result (mpq_QSdata const * p_mpq,
 										 mpq_t * const x,
 										 const mpq_t infeas,
@@ -323,11 +349,39 @@ void partial_result (mpq_QSdata const * p_mpq,
 {
 	char *mpq_str = NULL;
 	mpq_str = mpq_get_str (NULL, 10, infeas);
-	// Strictly speaking, this is > rather than >=, but the point is that it
-	// could be anything >=.
 	printf ("PARTIAL: status = delta-FEASIBLE with delta = %.17g ( >= %s)\n",
-					nextafter (mpq_get_d (infeas), 1.0/0.0), mpq_str);
+					mpq_upper_d (infeas), mpq_str);
 	free_gmp_str (mpq_str);
+}
+
+void partial_full_result (const mpq_QSdata const * p_mpq,
+												  const mpq_t * const x,
+												  const mpq_t * const y,
+												  const mpq_t obj_lo,
+												  const mpq_t obj_up,
+												  const mpq_t diff,
+												  const mpq_t delta,
+												  void *data)
+{
+	char *diff_str = NULL;
+	char *obj_lo_str = NULL;
+	char *obj_up_str = NULL;
+	diff_str = mpq_get_str (NULL, 10, diff);
+	obj_lo_str = mpq_get_str (NULL, 10, obj_lo);
+	if (mpq_sgn (diff) != 0)
+		obj_up_str = mpq_get_str (NULL, 10, obj_up);
+	printf ("PARTIAL: status = delta-OPTIMAL with delta = %.17g ( >= %s)"
+	        ", range = [%.17g, %.17g]",
+					mpq_upper_d (diff), diff_str,
+					mpq_lower_d (obj_lo),	mpq_upper_d (obj_up));
+	if (mpq_sgn (diff) == 0)
+		printf (" = %s\n", obj_lo_str);
+	else
+		printf (" = [%s, %s]\n", obj_lo_str, obj_up_str);
+	free_gmp_str (diff_str);
+	free_gmp_str (obj_lo_str);
+	if (mpq_sgn (diff) != 0)
+		free_gmp_str (obj_up_str);
 }
 
 /* ========================================================================= */
@@ -438,7 +492,8 @@ int main (int ac,
 		rval = QSexact_solver (p_mpq, x_mpq, y_mpq, basis, simplexalgo, &status);
 		break;
 	case ALGO_DELTA_OPT:
-		rval = QSdelta_full_solver (p_mpq, delta, x_mpq, y_mpq, obj_lo, obj_up, basis, simplexalgo, &status);
+		rval = QSdelta_full_solver (p_mpq, delta, x_mpq, y_mpq, obj_lo, obj_up, basis, simplexalgo, &status,
+																continuous_output ? partial_full_result : NULL, NULL);
 		mpq_sub (delta, obj_up, obj_lo);
 		break;
 	case ALGO_DELTA_FEAS_PHASE_1:

@@ -157,7 +157,9 @@ static int judge_basis (int *judgement,
                         mpq_t *obj_coefs,
                         mpq_t *rhs_coefs,
                         int *have_primal,
-                        int *have_dual)
+                        int *have_dual,
+                        delta_full_callback_t delta_callback,
+                        void *callback_data)
 {
   int rval = 0;
   mpq_t *y_mpq = 0;
@@ -195,6 +197,7 @@ static int judge_basis (int *judgement,
   }
   else
   {
+    int changed = 0;
     if (QS_LP_OPTIMAL == *status || p_mpq->lp->probstat.primal_feasible)
     {
       assert (p_mpq->lp->basisstat.primal_feasible);
@@ -216,6 +219,7 @@ static int judge_basis (int *judgement,
           (p_mpq->qslp->objsense == QS_MIN ? mpq_cmp (primal_obj, obj_up) < 0
                                            : mpq_cmp (primal_obj, obj_lo) > 0))
       {
+        changed = 1;
         mpq_set (p_mpq->qslp->objsense == QS_MIN ? obj_up : obj_lo,
                  primal_obj);
         MESSAGE (msg_lvl, "Primal feasible: set %s to %lf",
@@ -235,6 +239,7 @@ static int judge_basis (int *judgement,
             ? mpq_cmp (p_mpq->lp->dobjval, obj_lo) > 0
             : mpq_cmp (p_mpq->lp->dobjval, obj_up) < 0))
       {
+        changed = 1;
         mpq_set (p_mpq->qslp->objsense == QS_MIN ? obj_lo : obj_up,
                  p_mpq->lp->dobjval);
         MESSAGE (msg_lvl, "Dual feasible: set %s to %lf",
@@ -256,7 +261,7 @@ static int judge_basis (int *judgement,
       goto CLEANUP;
     }
 #endif
-    if (*have_primal && *have_dual)
+    if (changed && *have_primal && *have_dual)
     {
       // Could be optimal or delta-optimal
       mpq_sub (diff, obj_up, obj_lo);
@@ -276,6 +281,10 @@ static int judge_basis (int *judgement,
         *status = QS_LP_DELTA_OPTIMAL;
         *judgement = 1;
         goto CLEANUP;
+      }
+      else if (NULL != delta_callback)
+      {
+        delta_callback (p_mpq, x, y, obj_lo, obj_up, diff, delta, callback_data);
       }
     }
   }
@@ -306,6 +315,9 @@ CLEANUP:
  * @param status pointer to the integer where we will return the status of the
  * problem, either optimal, delta-optimal, unbounded, or infeasible (we could
  * also return time out).
+ * @param delta_callback if not null, will be called if a delta-satisfying
+ * result is found for some value greater than delta.
+ * @param callback_data additional parameter to be passed to delta_callback.
  * @return zero on success, non-zero otherwise. */
 int QSdelta_full_solver (mpq_QSdata * p_mpq,
                          const mpq_t delta,
@@ -315,7 +327,9 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
                          mpq_t obj_up,
                          QSbasis * const ebasis,
                          int simplexalgo,
-                         int *status)
+                         int *status,
+                         delta_full_callback_t delta_callback,
+                         void *callback_data)
 {
   /* local variables */
   int last_status = 0, last_iter = 0;
@@ -387,7 +401,8 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
     int judgement = 0;
     EGcallD (judge_basis (&judgement, 1, p_mpq, status, basis, msg_lvl,
                           delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
-                          &have_primal, &have_dual));
+                          &have_primal, &have_dual,
+                          delta_callback, callback_data));
     MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",
             judgement, *status);
     if (judgement == 2)
@@ -486,7 +501,8 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
       int judgement = 0;
       EGcallD (judge_basis (&judgement, 0, p_mpq, status, basis, msg_lvl,
                             delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
-                            &have_primal, &have_dual));
+                            &have_primal, &have_dual,
+                            delta_callback, callback_data));
       MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",
               judgement, *status);
       if (judgement) {
