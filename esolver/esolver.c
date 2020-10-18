@@ -537,35 +537,15 @@ int main (int ac,
 	{
 	case QS_LP_OPTIMAL:
 		EGioPrintf (out_f, "status = OPTIMAL");
-		if (printsol)
-		{
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-		}
 		break;
 	case QS_LP_DELTA_OPTIMAL:
 		EGioPrintf (out_f, "status = delta-OPTIMAL with delta = %g", delta);
-		if (printsol)
-		{
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-		}
 		break;
 	case QS_LP_FEASIBLE:
 		EGioPrintf (out_f, "status = FEASIBLE");
-		if (printsol)
-		{
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-		}
 		break;
 	case QS_LP_DELTA_FEASIBLE:
 		EGioPrintf (out_f, "status = delta-FEASIBLE with delta = %g", delta);
-		if (printsol)
-		{
-			rval = QSexact_print_sol (p_mpq, out_f);
-			CHECKRVALG(rval,CLEANUP);
-		}
 		break;
 	case QS_LP_INFEASIBLE:
 		EGioPrintf (out_f, "status = INFEASIBLE");
@@ -580,6 +560,14 @@ int main (int ac,
 	if (print_times)
 		EGioPrintf (out_f, " after %.17g seconds", timer_solve.cum_zeit);
 	EGioPrintf (out_f, "\n");
+	if (printsol && (status == QS_LP_OPTIMAL ||
+								   status == QS_LP_DELTA_OPTIMAL ||
+									 status == QS_LP_FEASIBLE ||
+									 status == QS_LP_DELTA_FEASIBLE))
+	{
+		rval = QSexact_print_sol (p_mpq, out_f);
+		CHECKRVALG(rval,CLEANUP);
+	}
 	EGioClose (out_f);
 	/* ending */
 CLEANUP:
