@@ -585,7 +585,7 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 		{
 			if (p_mpq->simplex_display || DEBUG >= __QS_SB_VERB)
 			{
-				QSlog("Re-using previous basis");
+				QSlog("Reusing previous basis");
 			}
 			if (basis)
 			{
@@ -610,14 +610,14 @@ int QSexact_delta_solver (mpq_QSdata * p_orig,
 			}
 			if (p_mpq->simplex_display || DEBUG >= __QS_SB_VERB)
 			{
-				QSlog("Not-using previous basis");
+				QSlog("Not using previous basis");
 			}
 		}
 		if (mpf_ILLeditor_solve (p_mpf, simplexalgo))
 		{
 			if (p_mpq->simplex_display || DEBUG >= __QS_SB_VERB)
 			{
-				QSlog("mpf_%u precision falied, error code %d, continuing with "
+				QSlog("mpf_%u precision failed, error code %d, continuing with "
 										"next precision", precision, rval);
 			 }
 			goto NEXT_PRECISION;
