@@ -143,30 +143,30 @@ static void my_inner_prod (mpq_t result, mpq_t *const a, mpq_t *const b, const s
   }
 }
 
-static int judge_basis (int *judgement,
-                        int retry_get_infeas_array,
-                        mpq_QSdata * p_mpq,
-                        int *status,
-                        QSbasis * const basis,
-                        const int msg_lvl,
-                        const mpq_t delta,
-                        mpq_t * const x,
-                        mpq_t * const y,
-                        mpq_t obj_lo,
-                        mpq_t obj_up,
-                        mpq_t *obj_coefs,
-                        mpq_t *rhs_coefs,
-                        int *have_primal,
-                        int *have_dual,
-                        delta_full_callback_t delta_callback,
-                        void *callback_data)
+static int QSdelta_full_basis_status (int *status_type,
+                                      int retry_get_infeas_array,
+                                      mpq_QSdata * p_mpq,
+                                      int *status,
+                                      QSbasis * const basis,
+                                      const int msg_lvl,
+                                      const mpq_t delta,
+                                      mpq_t * const x,
+                                      mpq_t * const y,
+                                      mpq_t obj_lo,
+                                      mpq_t obj_up,
+                                      mpq_t *obj_coefs,
+                                      mpq_t *rhs_coefs,
+                                      int *have_primal,
+                                      int *have_dual,
+                                      delta_full_callback_t delta_callback,
+                                      void *callback_data)
 {
   int rval = 0;
   mpq_t *y_mpq = 0;
   mpq_t diff;
 
   mpq_EGlpNumInitVar (diff);
-  *judgement = 0;
+  *status_type = 0;
 
   MESSAGE (msg_lvl, "Basis hash is 0x%016lX", QSexact_basis_hash(basis));
   EGcallD(QSexact_basis_status (p_mpq, status, basis, msg_lvl, NULL));
@@ -178,21 +178,21 @@ static int judge_basis (int *judgement,
     {
       if (retry_get_infeas_array)
       {
-        *judgement = 2;
+        *status_type = 2;
         goto CLEANUP;
       }
       else
         EGcallD (mpq_QSget_infeas_array_rval);
     }
     infeasible_output (p_mpq, y, y_mpq);
-    *judgement = 1;
+    *status_type = 1;
     goto CLEANUP;
   }
   else if (QS_LP_UNBOUNDED == *status)
   {
     // TODO: return certificate of unboundedness?
     unbounded_output (p_mpq);
-    *judgement = 1;
+    *status_type = 1;
     goto CLEANUP;
   }
   else
@@ -257,7 +257,7 @@ static int judge_basis (int *judgement,
     {
       // Shortcut: can avoid difference check
       optimal_output (p_mpq);
-      *judgement = 1;
+      *status_type = 1;
       goto CLEANUP;
     }
 #endif
@@ -271,7 +271,7 @@ static int judge_basis (int *judgement,
         // Optimal
         optimal_output (p_mpq);
         *status = QS_LP_OPTIMAL;
-        *judgement = 1;
+        *status_type = 1;
         goto CLEANUP;
       }
       else if (mpq_cmp (diff, delta) <= 0)
@@ -279,7 +279,7 @@ static int judge_basis (int *judgement,
         // Delta-optimal
         delta_optimal_output (p_mpq);
         *status = QS_LP_DELTA_OPTIMAL;
-        *judgement = 1;
+        *status_type = 1;
         goto CLEANUP;
       }
       else if (NULL != delta_callback)
@@ -398,22 +398,22 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
   if (QS_LP_OPTIMAL == *status || QS_LP_UNBOUNDED == *status || QS_LP_INFEASIBLE == *status)
   {
     basis = dbl_QSget_basis (p_dbl);
-    int judgement = 0;
-    EGcallD (judge_basis (&judgement, 1, p_mpq, status, basis, msg_lvl,
-                          delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
-                          &have_primal, &have_dual,
-                          delta_callback, callback_data));
-    MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",
-            judgement, *status);
-    if (judgement == 2)
+    int status_type = 0;
+    EGcallD (QSdelta_full_basis_status (&status_type, 1, p_mpq, status, basis, msg_lvl,
+                                        delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
+                                        &have_primal, &have_dual,
+                                        delta_callback, callback_data));
+    MESSAGE(msg_lvl, "QSdelta_full_basis_status returned with status_type = %d, *status = %d",
+            status_type, *status);
+    if (status_type == 2)
     {
       MESSAGE(p_mpq->simplex_display ? 0 : __QS_SB_VERB, "double approximation"
               " failed, code %d, continuing in extended precision", rval);
       goto MPF_PRECISION;
     }
-    else if (judgement)
+    else if (status_type)
     {
-      MESSAGE(msg_lvl, "Basis judgement made, quitting");
+      MESSAGE(msg_lvl, "Basis status determination made, quitting");
       goto CLEANUP;
     }
   }
@@ -498,15 +498,15 @@ int QSdelta_full_solver (mpq_QSdata * p_mpq,
     if (QS_LP_OPTIMAL == *status || QS_LP_UNBOUNDED == *status || QS_LP_INFEASIBLE == *status)
     {
       basis = mpf_QSget_basis (p_mpf);
-      int judgement = 0;
-      EGcallD (judge_basis (&judgement, 0, p_mpq, status, basis, msg_lvl,
-                            delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
-                            &have_primal, &have_dual,
-                            delta_callback, callback_data));
-      MESSAGE(msg_lvl, "judge_basis returned with judgement = %d, *status = %d",
-              judgement, *status);
-      if (judgement) {
-        MESSAGE(msg_lvl, "Basis judgement made, quitting");
+      int status_type = 0;
+      EGcallD (QSdelta_full_basis_status (&status_type, 0, p_mpq, status, basis, msg_lvl,
+                                          delta, x, y, obj_lo, obj_up, obj_coefs, rhs_coefs,
+                                          &have_primal, &have_dual,
+                                          delta_callback, callback_data));
+      MESSAGE(msg_lvl, "QSdelta_full_basis_status returned with status_type = %d, *status = %d",
+              status_type, *status);
+      if (status_type) {
+        MESSAGE(msg_lvl, "Basis status determination made, quitting");
         goto CLEANUP;
       }
     }
