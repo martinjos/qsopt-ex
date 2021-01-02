@@ -12,7 +12,7 @@
 /* ========================================================================= */
 /** @brief Callback to receive partial results from delta-complete full LP
  * method. */
-typedef void (*delta_full_callback_t)(const mpq_QSdata const * p_mpq,
+typedef void (*delta_full_callback_t)(const mpq_QSdata * const p_mpq,
                                       const mpq_t * const x,
                                       const mpq_t * const y,
                                       const mpq_t obj_lo,

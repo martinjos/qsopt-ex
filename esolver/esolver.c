@@ -363,7 +363,7 @@ void partial_result (mpq_QSdata const * p_mpq,
 	free_gmp_str (mpq_str);
 }
 
-void partial_full_result (const mpq_QSdata const * p_mpq,
+void partial_full_result (const mpq_QSdata * const p_mpq,
 												  const mpq_t * const x,
 												  const mpq_t * const y,
 												  const mpq_t obj_lo,
